@@ -1,0 +1,40 @@
+server:
+  port: 8082
+
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://127.0.0.1:5432/micro_service_project
+    username: postgres
+    password: root
+  application:
+    name: stock-service
+  profiles:
+    active: test
+  mvc:
+    throw-exception-if-no-handler-found: true
+  web:
+    resources:
+      add-mappings: true
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+
+radis:
+  host: localhost
+  port: 6379
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+
+knife4j:
+  enable: true
+  production: false
+  basic:
+    enable: false
+  setting:
+    language: zh_cn
+
+springdoc:
+  packages-to-scan: com.spring.boot.stockservice.controller
+  paths-to-match: /**

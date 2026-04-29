@@ -1,0 +1,95 @@
+package com.spring.boot.commoncore.result;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
+/**
+ *
+ *
+ * @author Chi Shoucheng
+ * @datetime 2026/4/14 10:02
+ */
+@Getter
+@Setter
+@ToString
+@Schema(description = "统一响应结果")
+public class Result<T> {
+
+	@Schema(description = "响应码", example = "200")
+	private int code;
+	@Schema(description = "响应信息", example = "操作成功")
+	private String msg;
+	@Schema(description = "响应数据，具体结构取决于接口返回类型")
+	private T data;
+
+	//构造器 ============================
+
+	private Result() {}
+
+	private Result(int code, String msg, T data) {
+		this.code = code;
+		this.msg = msg;
+		this.data = data;
+	}
+
+	//成功返回 ============================
+
+	public static Result<Void> success() {
+		return new Result<>(ResultCode.OK.getCode(), ResultCode.OK.getMsg(), null);
+	}
+
+	public static Result<Void> success(String msg) {
+		String finalMsg = msg.isBlank() ? ResultCode.OK.getMsg() : msg;
+		return new Result<>(ResultCode.OK.getCode(), finalMsg, null);
+	}
+
+	public static <T> Result<T> success(T data) {
+		return new Result<>(ResultCode.OK.getCode(), ResultCode.OK.getMsg(), data);
+	}
+
+	public static <T> Result<T> success(T data, String customMsg) {
+		String finalMsg = customMsg.isBlank() ? ResultCode.OK.getMsg() : customMsg;
+		return new Result<>(ResultCode.OK.getCode(), finalMsg, data);
+	}
+
+	public static <T> Result<T> success(ResultCode code, T data) {
+		return new Result<>(code.getCode(), code.getMsg(), data);
+	}
+
+	//失败返回 ============================
+
+	public static Result<?> fail() {
+		return new Result<>(ResultCode.FAILED.getCode(), ResultCode.FAILED.getMsg(), null);
+	}
+
+	public static Result<?> fail(String msg) {
+		return new Result<>(ResultCode.FAILED.getCode(), msg, null);
+	}
+
+	public static Result<?> fail(ResultCode code) {
+		return new Result<>(code.getCode(), code.getMsg(), null);
+	}
+
+	public static Result<?> fail(ResultCode code, String customMsg) {
+		String finalMsg = customMsg.isBlank() ? code.getMsg() : customMsg;
+		return new Result<>(code.getCode(), finalMsg, null);
+	}
+
+	public static Result<?> fail(int code, String msg) {
+		return new Result<>(code, msg, null);
+	}
+
+	//链式调用 ============================
+
+	public Result<T> msg(String msg) {
+		this.msg = msg;
+		return this;
+	}
+
+	public Result<T> data(T data) {
+		this.data = data;
+		return this;
+	}
+}

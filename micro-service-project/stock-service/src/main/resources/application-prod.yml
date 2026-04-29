@@ -1,0 +1,15 @@
+logging:
+  level:
+    root: warn
+    com.spring.boot.c1: info
+    org.mybatis: warn
+    org.springframework.jdbc: warn
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{50} - %msg%n"
+
+  file:
+    name: /var/log/stockservice/app.log
+  logback:
+    rolling-policy:
+      max-file-size: 100MB
+      max-history: 7

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spring.boot.userservice.mapper.UserMapper">
+
+    <select id="selectUserPage" resultType="com.spring.boot.userservice.entity.User">
+        SELECT user_id, name, age, email, create_time, update_time
+        FROM t_user
+        <where>
+            <!-- bizId 精确匹配 -->
+            <if test="query.userId != null">
+                AND user_id = #{query.userId}
+            </if>
+            <!-- name 模糊左右匹配 -->
+            <if test="query.name != null and query.name != ''">
+                AND name LIKE CONCAT('%', #{query.name}, '%')
+            </if>
+            <!-- age 精确匹配 -->
+            <if test="query.age != null">
+                AND age = #{query.age}
+            </if>
+            <!-- email 模糊查询 -->
+            <if test="query.email != null and query.email != ''">
+                AND email LIKE CONCAT('%', #{query.email}, '%')
+            </if>
+            <!-- 创建时间范围 -->
+            <if test="query.startTime != null">
+                AND create_time >= #{query.startTime}
+            </if>
+            <if test="query.endTime != null">
+                AND #{query.endTime} >= create_time
+            </if>
+            <!-- 更新时间范围（不需要可直接删除） -->
+            <if test="query.updateStartTime != null">
+                AND update_time >= #{query.updateStartTime}
+            </if>
+            <if test="query.updateEndTime != null">
+                AND #{query.updateEndTime} >= update_time
+            </if>
+        </where>
+        <!-- 按创建时间倒序，最新数据在前 -->
+        ORDER BY create_time DESC
+    </select>
+
+</mapper>
