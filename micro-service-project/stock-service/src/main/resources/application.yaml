@@ -38,3 +38,17 @@ knife4j:
 springdoc:
   packages-to-scan: com.spring.boot.stockservice.controller
   paths-to-match: /**
+
+seata:
+  enabled: false
+  tx-service-group: my_test_tx_group
+  registry:
+    type: file
+  service:
+    vgroup-mapping:
+      my_test_tx_group: default
+    grouplist:
+      default: 127.0.0.1:8091
+  client:
+    rm:
+      db-type: postgresql
