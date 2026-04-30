@@ -2,7 +2,7 @@
 
 \## 项目简介
 
-基于 \*\*Spring Boot 3.x + Spring Cloud Alibaba\*\* 构建的微服务项目，包含用户服务、库存服务、订单服务（目前模块已创建，业务功能持续迭代中）模块。
+基于 \*\*Spring Boot 3.x + Spring Cloud Alibaba\*\* 构建的微服务项目，包含用户服务、库存服务、订单服务模块。
 
 
 

@@ -3,6 +3,7 @@ package com.spring.boot.stockservice.vo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 
 /**
@@ -22,7 +23,7 @@ public class StockVO {
 	@Schema(description = "库存数量", example = "100")
 	private Integer stock;
 	@Schema(description = "单价", example = "10")
-	private Integer price;
+	private BigDecimal price;
 	@Schema(description = "创建时间", example = "2026-01-01 00:00:00")
 	private Timestamp createTime;
 	@Schema(description = "更新时间", example = "2027-01-01 00:00:00")

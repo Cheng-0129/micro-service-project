@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 /**
  *
  *
@@ -26,5 +28,5 @@ public class StockCreateDTO {
 	@NotNull(message = "单价不能为空")
 	@Min(value = 0, message = "单价不能小于0")
 	@Schema(description = "单价", example = "10")
-	private Integer price;
+	private BigDecimal price;
 }

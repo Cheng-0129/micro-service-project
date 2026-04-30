@@ -137,6 +137,7 @@ public class StockValidationService {
 			deductVO.setProductId(productId);
 			deductVO.setProductName(existing.getProductName());
 			deductVO.setStock(stockAfter);
+			deductVO.setPrice(existing.getPrice());
 			log.info("【校验层】库存扣减成功，productId={}, num={}, stock={}", productId, num, stockAfter);
 			return deductVO;
 		}

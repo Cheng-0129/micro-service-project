@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 /**
  *
  *
@@ -23,5 +25,5 @@ public class StockUpdateDTO {
 
 	@Schema(description = "单价", example = "10")
 	@Min(value = 0, message = "单价不能小于0")
-	private Integer price;
+	private BigDecimal price;
 }
