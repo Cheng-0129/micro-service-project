@@ -37,21 +37,21 @@ public class Result<T> {
 	//成功返回 ============================
 
 	public static Result<Void> success() {
-		return new Result<>(ResultCode.OK.getCode(), ResultCode.OK.getMsg(), null);
+		return new Result<>(ResultCode.SUCCESS.getCode(), ResultCode.SUCCESS.getMsg(), null);
 	}
 
 	public static Result<Void> success(String msg) {
-		String finalMsg = msg.isBlank() ? ResultCode.OK.getMsg() : msg;
-		return new Result<>(ResultCode.OK.getCode(), finalMsg, null);
+		String finalMsg = msg.isBlank() ? ResultCode.SUCCESS.getMsg() : msg;
+		return new Result<>(ResultCode.SUCCESS.getCode(), finalMsg, null);
 	}
 
 	public static <T> Result<T> success(T data) {
-		return new Result<>(ResultCode.OK.getCode(), ResultCode.OK.getMsg(), data);
+		return new Result<>(ResultCode.SUCCESS.getCode(), ResultCode.SUCCESS.getMsg(), data);
 	}
 
 	public static <T> Result<T> success(T data, String customMsg) {
-		String finalMsg = customMsg.isBlank() ? ResultCode.OK.getMsg() : customMsg;
-		return new Result<>(ResultCode.OK.getCode(), finalMsg, data);
+		String finalMsg = customMsg.isBlank() ? ResultCode.SUCCESS.getMsg() : customMsg;
+		return new Result<>(ResultCode.SUCCESS.getCode(), finalMsg, data);
 	}
 
 	public static <T> Result<T> success(ResultCode code, T data) {
@@ -79,17 +79,5 @@ public class Result<T> {
 
 	public static Result<?> fail(int code, String msg) {
 		return new Result<>(code, msg, null);
-	}
-
-	//链式调用 ============================
-
-	public Result<T> msg(String msg) {
-		this.msg = msg;
-		return this;
-	}
-
-	public Result<T> data(T data) {
-		this.data = data;
-		return this;
 	}
 }

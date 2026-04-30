@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,24 +29,15 @@ import java.util.stream.Collectors;
 @Slf4j
 public class GlobalExceptionHandler {
 
-
-
-	//业务异常 ============================
+	// ==================== 业务异常 ====================
 
 	@ExceptionHandler(BusinessException.class)
 	public Result<?> handleBusinessException(BusinessException e) {
-
-		if(e.getCode() == ResultCode.USER_ADD_FAILED.getCode()) {
-			log.error("业务异常【用户添加失败】，msg={}", e.getMessage(), e);
-		}else {
-			log.error("业务异常，msg={}", e.getMessage(), e);
-		}
-
+		log.error("业务异常，code={}, msg={}", e.getCode(), e.getMessage(), e);
 		return Result.fail(e.getCode(), e.getMessage());
 	}
 
-
-	//参数异常 ============================
+	// ==================== 参数校验异常 ====================
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public Result<?> handleMethodArgumentNotValid(MethodArgumentNotValidException e) {
@@ -56,7 +48,7 @@ public class GlobalExceptionHandler {
 				.map(FieldError::getDefaultMessage)
 				.collect(Collectors.joining("；"));
 
-		log.error("参数异常【实体参数校验失败】，errorMsg={}, msg={}", errorMsg, e.getMessage(), e);
+		log.error("参数校验失败，msg={}", errorMsg, e);
 		return Result.fail(ResultCode.PARAM_VALID_ERROR, errorMsg);
 	}
 
@@ -67,42 +59,46 @@ public class GlobalExceptionHandler {
 				.map(ConstraintViolation::getMessage)
 				.collect(Collectors.joining("；"));
 
-		log.error("参数异常【请求参数校验失败】，errorMsg={}, msg={}", errorMsg, e.getMessage(), e);
+		log.error("参数校验失败，msg={}", errorMsg, e);
 		return Result.fail(ResultCode.PARAM_VALID_ERROR, errorMsg);
 	}
 
-	//客户端异常 ============================
+	// ==================== Spring MVC 内置异常 → 映射到 HTTP 状态码 ====================
 
 	@ExceptionHandler(MethodArgumentTypeMismatchException.class)
-	public Result<?> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException e) {
-		log.error("系统异常【400 请求参数错误】", e);
-		return Result.fail(ResultCode.BAD_REQUEST);
-	}
-
-	// 静态资源找不到 - 返回 404，让前端正常识别
-	@ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
-	@ResponseStatus(HttpStatus.NOT_FOUND)
-	public void handleNoResourceFound(org.springframework.web.servlet.resource.NoResourceFoundException e) {
-		// 不做任何处理，让 Spring 返回 404 状态码
+	@ResponseStatus(HttpStatus.BAD_REQUEST)          // HTTP 400
+	public Result<?> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
+		log.error("请求参数类型不匹配", e);
+		return Result.fail(ResultCode.PARAM_VALID_ERROR, "请求参数类型错误");
 	}
 
 	@ExceptionHandler(NoHandlerFoundException.class)
+	@ResponseStatus(HttpStatus.NOT_FOUND)            // HTTP 404
 	public Result<?> handleNoHandlerFound(NoHandlerFoundException e) {
-		log.error("系统异常【404 接口不存在】", e);
-		return Result.fail(ResultCode.NOT_FOUND, "请求接口不存在");
+		log.error("接口不存在", e);
+		return Result.fail(ResultCode.FAILED, "请求接口不存在");
 	}
 
 	@ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-	public Result<?> handleHttpRequestMethodNotSupported(HttpRequestMethodNotSupportedException e) {
-		log.error("系统异常【405 请求方法不支持】", e);
-		return Result.fail(ResultCode.METHOD_NOT_ALLOWED);
+	@ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)   // HTTP 405
+	public Result<?> handleMethodNotSupported(HttpRequestMethodNotSupportedException e) {
+		log.error("请求方法不支持", e);
+		return Result.fail(ResultCode.FAILED, "请求方法不支持");
 	}
 
-	//系统异常 ============================
+	// 静态资源 404，只返回 HTTP 404，不返回 JSON 体
+	@ExceptionHandler(NoResourceFoundException.class)
+	@ResponseStatus(HttpStatus.NOT_FOUND)
+	public void handleNoResourceFound(NoResourceFoundException e) {
+		// 不做处理，让 Spring 自己返回 404
+	}
+
+	// ==================== 兜底异常 ====================
 
 	@ExceptionHandler(Exception.class)
-	public Result<?> handleException(Exception e) {
+	@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR) // HTTP 500
+	public Result<?> handleUnknownException(Exception e) {
 		log.error("系统未知异常", e);
-		return Result.fail(ResultCode.INTERNAL_SERVER_ERROR, "系统繁忙，请稍后重试");
+		return Result.fail(ResultCode.FAILED, "系统繁忙，请稍后重试");
 	}
 }

@@ -20,7 +20,7 @@ public class StockApiConfig {
 	public OpenAPI stockOpenAPI() {
 		return new OpenAPI()
 				.info(new Info()
-						.title("库存服务 API 文档")  // ← 自己的标题
+						.title("库存服务 API 文档")
 						.description("库存管理相关接口，提供库存的增删改查功能")
 						.version("v1.0.0")
 						.contact(new Contact().name("Chi Shoucheng")));

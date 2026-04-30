@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/user")
 @Validated
 @Slf4j
-@Tag(name = "用户管理模块", description = "用户的增删改查接口")
+@Tag(name = "用户管理模块", description = "用户的增删改查、分页查询接口")
 public class UserController {
 
 	@Resource
@@ -47,22 +47,21 @@ public class UserController {
 
 		return Result.success("添加成功");
 	}
-
 	@Operation(
 			summary = "根据ID删除用户",
 			description = "传入用户ID，删除对应ID的用户，若用户不存在则返回10002。"
 	)
 	@DeleteMapping("/delete/{id}")
 	public Result<Void> delete(@PathVariable("id")
-	                               @Parameter(
-										   name = "id",
-			                               description = "用户ID",
-			                               example = "1",
-			                               required = true
-	                               )
-	                               @NotNull(message = "ID不能为空")
-	                               @Min(value = 1, message = "ID必须大于0")
-	                               Long id) {
+	                           @Parameter(
+			                           name = "id",
+			                           description = "用户ID",
+			                           example = "1",
+			                           required = true
+	                           )
+	                           @NotNull(message = "ID不能为空")
+	                           @Min(value = 1, message = "ID必须大于0")
+	                           Long id) {
 
 		log.info("【用户模块】删除用户，请求参数：{}", id);
 
@@ -91,15 +90,15 @@ public class UserController {
 	)
 	@GetMapping("/get/{id}")
 	public Result<UserVO> getById(@PathVariable("id")
-	                                         @Parameter(
-													 name = "id",
-			                                         description = "用户ID",
-			                                         example = "1",
-			                                         required = true
-	                                         )
-	                                         @NotNull(message = "ID不能为空")
-	                                         @Min(value = 1, message = "ID必须大于0")
-	                                         Long id) {
+	                              @Parameter(
+			                              name = "id",
+			                              description = "用户ID",
+			                              example = "1",
+			                              required = true
+	                              )
+	                              @NotNull(message = "ID不能为空")
+	                              @Min(value = 1, message = "ID必须大于0")
+	                              Long id) {
 
 		log.info("【用户模块】查询用户信息，请求参数：{}", id);
 
