@@ -20,11 +20,11 @@ public class BusinessException extends RuntimeException {
 	//构造器 ============================
 
 	public BusinessException() {
-		this(ResultCode.INTERNAL_SERVER_ERROR.getCode(), ResultCode.INTERNAL_SERVER_ERROR.getMsg(), null);
+		this(ResultCode.FAILED.getCode(), ResultCode.FAILED.getMsg(), null);
 	}
 
 	public BusinessException(String msg) {
-		this(ResultCode.INTERNAL_SERVER_ERROR.getCode(), msg, null);
+		this(ResultCode.FAILED.getCode(), msg, null);
 	}
 
 	public BusinessException(ResultCode code) {

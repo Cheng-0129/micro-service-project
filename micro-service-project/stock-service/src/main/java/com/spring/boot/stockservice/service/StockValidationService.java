@@ -3,9 +3,9 @@ package com.spring.boot.stockservice.service;
 import com.spring.boot.commoncore.exception.BusinessException;
 import com.spring.boot.stockservice.convert.StockConvertMapper;
 import com.spring.boot.stockservice.entity.Stock;
-import com.spring.boot.stockservice.vo.StockCreateVO;
+import com.spring.boot.stockservice.dto.StockCreateDTO;
 import com.spring.boot.stockservice.vo.StockDeductVO;
-import com.spring.boot.stockservice.vo.StockUpdateVO;
+import com.spring.boot.stockservice.dto.StockUpdateDTO;
 import com.spring.boot.stockservice.vo.StockVO;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +32,7 @@ public class StockValidationService {
 	@Resource
 	private StockConvertMapper stockConvertMapper;
 
-	public void addStock(StockCreateVO VO) {
+	public void addStock(StockCreateDTO VO) {
 
 		log.info("【校验层】开始新增库存，请求参数：stock={}", VO);
 
@@ -67,7 +67,7 @@ public class StockValidationService {
 		return stockVO;
 	}
 
-	public void updateStockByProductId(Long productId, StockUpdateVO stock) {
+	public void updateStockByProductId(Long productId, StockUpdateDTO stock) {
 
 		log.debug("【校验层】开始更新库存，productId={}", productId);
 

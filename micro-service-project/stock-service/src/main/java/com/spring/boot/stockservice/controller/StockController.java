@@ -2,9 +2,9 @@ package com.spring.boot.stockservice.controller;
 
 import com.spring.boot.commoncore.result.Result;
 import com.spring.boot.stockservice.service.StockValidationService;
-import com.spring.boot.stockservice.vo.StockCreateVO;
+import com.spring.boot.stockservice.dto.StockCreateDTO;
 import com.spring.boot.stockservice.vo.StockDeductVO;
-import com.spring.boot.stockservice.vo.StockUpdateVO;
+import com.spring.boot.stockservice.dto.StockUpdateDTO;
 import com.spring.boot.stockservice.vo.StockVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -38,7 +38,7 @@ public class StockController {
 			description = "传入库存信息，创建新商品库存并返回成功状态，若添加失败则返回20001。"
 	)
 	@PostMapping("/add")
-	public Result<Void> addStock(@RequestBody @Valid StockCreateVO stock) {
+	public Result<Void> addStock(@RequestBody @Valid StockCreateDTO stock) {
 
 		log.info("【库存模块】新增库存信息，请求参数：stock={}", stock);
 
@@ -88,7 +88,7 @@ public class StockController {
 	                                )
 	                                @NotNull(message = "ID不能为空")
 	                                @Min(value = 1, message = "ID必须大于0") Long productId,
-	                                @RequestBody @Valid StockUpdateVO stock) {
+	                                @RequestBody @Valid StockUpdateDTO stock) {
 
 		log.info("【库存模块】更新库存信息，请求参数：productId={}, stock={}", productId, stock);
 
@@ -125,7 +125,7 @@ public class StockController {
 	}
 
 	@Operation(summary = "扣减库存",
-			description = "传入产品ID和数量，扣除对应数量的库存，若库存不存在则返回20002，若库存不足则返回20004"
+			description = "传入产品ID和数量，扣除对应数量的库存，成功则返回商品信息和库存余量，若库存不存在则返回20002，若库存不足则返回20004"
 	)
 	@PostMapping("/deduct")
 	public Result<StockDeductVO> deductStock(@RequestParam("productId")

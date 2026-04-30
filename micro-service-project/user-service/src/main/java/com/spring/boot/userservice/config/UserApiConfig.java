@@ -20,8 +20,8 @@ public class UserApiConfig {
 	public OpenAPI userOpenAPI() {
 		return new OpenAPI()
 				.info(new Info()
-						.title("用户服务 API 文档")  // ← 自己的标题
-						.description("用户管理相关接口")
+						.title("用户服务 API 文档")
+						.description("用户管理相关接口，提供用户的增删改查、分页查询功能")
 						.version("v1.0.0")
 						.contact(new Contact().name("Chi Shoucheng")));
 	}
@@ -29,7 +29,7 @@ public class UserApiConfig {
 	@Bean
 	public GroupedOpenApi userApi() {
 		return GroupedOpenApi.builder()
-				.group("用户模块，提供用户的增删改查、分页查询功能")
+				.group("用户模块")
 				.pathsToMatch("/user/**")
 				.packagesToScan("com.spring.boot.userservice.controller")
 				.build();
