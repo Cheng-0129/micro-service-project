@@ -9,6 +9,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 
 /**
@@ -40,7 +41,7 @@ public class Stock {
 
 	@Schema(description = "单价", example = "10")
 	@Min(value = 0, message = "单价不能小于0")
-	private Integer price;
+	private BigDecimal price;
 
 	@Schema(description = "创建时间")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)

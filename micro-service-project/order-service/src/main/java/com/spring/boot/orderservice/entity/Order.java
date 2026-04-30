@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 
 /**
@@ -38,7 +39,10 @@ public class Order {
 	private Integer num;
 
 	@Schema(description = "金额", example = "100")
-	private Integer amount;
+	private BigDecimal amount;
+
+	@Schema(description = "订单状态", example = "0")
+	private Integer status;
 
 	@Schema(description = "创建时间")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)

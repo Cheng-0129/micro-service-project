@@ -40,7 +40,7 @@ springdoc:
   paths-to-match: /**
 
 seata:
-  enabled: false
+  enabled: true
   tx-service-group: my_test_tx_group
   registry:
     type: file

@@ -1,4 +1,4 @@
-package com.spring.boot.stockservice.vo;
+package com.spring.boot.orderservice.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -19,7 +19,7 @@ public class StockDeductVO {
 	private Long productId;
 	@Schema(description = "产品名称", example = "产品A")
 	private String productName;
-	@Schema(description = "库存数量", example = "100")
+	@Schema(description = "剩余库存数量", example = "100")
 	private Integer stock;
 	@Schema(description = "产品价格", example = "100")
 	private BigDecimal price;
