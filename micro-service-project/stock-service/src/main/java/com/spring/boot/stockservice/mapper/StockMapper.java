@@ -16,4 +16,6 @@ public interface StockMapper extends BaseMapper<Stock> {
 
 	Stock selectByProductId(@Param("productId") Long productId);
 
+	Integer deductStock(@Param("productId") Long productId, @Param("num") Integer num);
+
 }

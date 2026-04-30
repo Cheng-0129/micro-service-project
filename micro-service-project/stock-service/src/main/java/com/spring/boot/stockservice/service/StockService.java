@@ -18,5 +18,7 @@ public interface StockService {
 
 	boolean deleteStock(Long id, Long productId);
 
+	Integer deductStock(Long productId, Integer num);
+
 }
 

@@ -84,4 +84,16 @@ public class StockServiceDBImpl extends ServiceImpl<StockMapper, Stock> implemen
 		}
 		return result;
 	}
+
+	@Override
+	public Integer deductStock(Long productId, Integer num) {
+		log.debug("【数据层】开始扣减库存，productId={}, num={}", productId, num);
+		Integer stockAfter = this.stockMapper.deductStock(productId, num);
+		if (stockAfter != null) {
+			log.debug("【数据层】扣减库存成功，剩余库存={}", stockAfter);
+		} else {
+			log.error("【数据层】扣减库存失败，productId={}, num={}", productId, num);
+		}
+		return stockAfter;
+	}
 }

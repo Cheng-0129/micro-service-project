@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 @Service("stockServiceCache")
-public class StockServiceCacheImpl implements StockService{
+public class StockServiceCacheImpl implements StockService {
 
 	@Autowired
 	@Qualifier("stockServiceDB")
@@ -171,6 +171,19 @@ public class StockServiceCacheImpl implements StockService{
 		}
 
 		return success;
+	}
+
+	@Override
+	public Integer deductStock(Long productId, Integer num) {
+
+		log.debug("【缓存层】开始扣减库存，productId={}, num={}", productId, num);
+
+		Integer stockAfter = stockServiceDB.deductStock(productId, num);
+		if (stockAfter != null) {
+			evictCache(productId);
+			log.info("【缓存层】库存扣减成功，已清除缓存");
+		}
+		return stockAfter;
 	}
 
 	private void setCacheWithRandomExpire(String key, Stock stock) {

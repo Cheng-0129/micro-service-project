@@ -4,6 +4,7 @@ import com.spring.boot.commoncore.exception.BusinessException;
 import com.spring.boot.stockservice.convert.StockConvertMapper;
 import com.spring.boot.stockservice.entity.Stock;
 import com.spring.boot.stockservice.vo.StockCreateVO;
+import com.spring.boot.stockservice.vo.StockDeductVO;
 import com.spring.boot.stockservice.vo.StockUpdateVO;
 import com.spring.boot.stockservice.vo.StockVO;
 import jakarta.annotation.Resource;
@@ -38,7 +39,7 @@ public class StockValidationService {
 		Stock stock = stockConvertMapper.toEntity(VO);
 
 		Stock created = stockService.addStock(stock);
-		if(created == null) {
+		if (created == null) {
 			log.error("【校验层】数据库新增失败，productId={}", created);
 			throw BusinessException.of(STOCK_ADD_FAILED);
 		}
@@ -53,7 +54,7 @@ public class StockValidationService {
 
 		Stock stock = stockService.getStockByProductId(productId);
 
-		if(stock == null) {
+		if (stock == null) {
 			log.warn("【校验层】库存不存在，productId={}", productId);
 			throw BusinessException.of(STOCK_NOT_EXIST);
 		}
@@ -85,7 +86,7 @@ public class StockValidationService {
 		log.debug("【校验层】查询到已有记录，dbId={}, productId={}", existing.getId(), productId);
 
 		boolean success = stockService.updateStock(updated);
-		if(!success) {
+		if (!success) {
 			log.error("【校验层】数据库更新失败，productId={}", updated.getProductId());
 			throw BusinessException.of(STOCK_UPDATE_FAILED);
 		}
@@ -109,11 +110,41 @@ public class StockValidationService {
 
 		boolean success = stockService.deleteStock(existing.getId(), productId);
 
-		if(!success) {
-			log.error("【校验层】数据删除失败，productId={}", productId);
-			throw BusinessException.of(STOCK_DELETE_FAILED);
+		if (!success) {
+			log.warn("【校验层】库存删除失败，可能已被并发删除，productId={}", productId);
+			throw BusinessException.of(STOCK_NOT_EXIST);
 		}
 
 		log.info("【校验层】库存删除成功");
+	}
+
+	public StockDeductVO deductStock(Long productId, Integer num) {
+
+		log.debug("【校验层】开始扣除库存，productId={}, num={}", productId, num);
+
+		Stock existing = stockService.getStockByProductId(productId);
+		if (existing == null) {
+			log.warn("【校验层】扣减失败，库存不存在");
+			throw BusinessException.of(STOCK_NOT_EXIST);
+		}
+
+		log.debug("【校验层】查询到已有记录，dbId={}, productId={}", existing.getId(), productId);
+
+		Integer stockAfter = stockService.deductStock(productId, num);
+
+		if (stockAfter != null) {
+			StockDeductVO deductVO = new StockDeductVO();
+			deductVO.setProductId(productId);
+			deductVO.setProductName(existing.getProductName());
+			deductVO.setStock(stockAfter);
+			log.info("【校验层】库存扣减成功，productId={}, num={}, stock={}", productId, num, stockAfter);
+			return deductVO;
+		}
+
+		Stock current = stockService.getStockByProductId(productId);
+		if (current == null) {
+			throw BusinessException.of(STOCK_NOT_EXIST);
+		}
+		throw BusinessException.of(STOCK_INSUFFICIENT);
 	}
 }

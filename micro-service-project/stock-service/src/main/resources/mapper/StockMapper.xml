@@ -8,4 +8,8 @@
         SELECT * FROM t_stock WHERE product_id = #{productId}
     </select>
 
+    <select id="deductStock" resultType="int">
+        Update t_stock Set stock = stock - #{num} Where product_id = #{productId} And stock >= #{num} RETURNING stock
+    </select>
+
 </mapper>
