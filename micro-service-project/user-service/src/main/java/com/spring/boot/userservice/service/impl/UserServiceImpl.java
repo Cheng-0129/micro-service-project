@@ -6,20 +6,15 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.spring.boot.commoncore.exception.BusinessException;
-import com.spring.boot.commoncore.result.Result;
 import com.spring.boot.commoncore.vo.PageVO;
 import com.spring.boot.userservice.convert.UserConvertMapper;
-import com.spring.boot.userservice.dto.OrderCreateDTO;
 import com.spring.boot.userservice.dto.UserCreateDTO;
 import com.spring.boot.userservice.dto.UserQueryDTO;
 import com.spring.boot.userservice.dto.UserUpdateDTO;
 import com.spring.boot.userservice.entity.User;
-import com.spring.boot.userservice.feign.OrderClient;
 import com.spring.boot.userservice.mapper.UserMapper;
 import com.spring.boot.userservice.service.UserService;
-import com.spring.boot.userservice.vo.OrderVO;
 import com.spring.boot.userservice.vo.UserVO;
-import io.seata.spring.annotation.GlobalTransactional;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -50,9 +45,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
 	@Resource
 	private JdbcTemplate jdbcTemplate;
-
-	@Resource
-	private OrderClient orderClient;
 
 	@Transactional
 	public void addUser(UserCreateDTO userCreateDTO) {
@@ -182,22 +174,4 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		return pageVO;
 	}
 
-	@Override
-	@GlobalTransactional(rollbackFor = Exception.class)
-	public OrderVO addOrder(OrderCreateDTO orderCreateDTO) {
-
-		log.info("【用户模块】开始执行添加订单，请求参数：{}", orderCreateDTO);
-
-		Result<OrderVO> result = orderClient.createOrder(orderCreateDTO);
-		if (result == null || result.isFail() || result.getData() == null) {
-			log.warn("【用户模块】下单失败，userId={}, productId={}, num={}",
-					orderCreateDTO.getUserId(), orderCreateDTO.getProductId(), orderCreateDTO.getNum());
-			throw new BusinessException(FEIGN_ERROR.getCode(), "下单失败，请稍后重试");
-		}
-		OrderVO orderVO = result.getData();
-
-		log.info("【用户模块】添加订单成功，响应结果：{}", orderVO);
-
-		return orderVO;
-	}
 }
