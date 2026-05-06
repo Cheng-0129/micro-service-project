@@ -12,4 +12,53 @@
         Update t_stock Set stock = stock - #{num} Where product_id = #{productId} And stock >= #{num} RETURNING stock
     </select>
 
+    <select id="selectStockPage" resultType="com.spring.boot.stockservice.entity.Stock">
+        SELECT product_id, product_name, price, stock, create_time, update_time
+        FROM t_stock
+        <where>
+            <!-- product_Id 精确匹配 -->
+            <if test="query.productId != null">
+                AND product_id = #{query.productId}
+            </if>
+
+            <!-- product_name 模糊匹配 -->
+            <if test="query.productName != null and query.productName != ''">
+                AND product_name LIKE '%' || #{query.productName} || '%'
+            </if>
+
+            <!-- 价格范围 -->
+            <if test="query.minPrice != null">
+                AND price &gt;= #{query.minPrice}
+            </if>
+            <if test="query.maxPrice != null">
+                AND price &lt;= #{query.maxPrice}
+            </if>
+
+            <!-- 库存范围 -->
+            <if test="query.minStock != null">
+                AND stock &gt;= #{query.minStock}
+            </if>
+            <if test="query.maxStock != null">
+                AND stock &lt;= #{query.maxStock}
+            </if>
+
+            <!-- 创建时间范围 -->
+            <if test="query.startTime != null">
+                AND create_time &gt;= #{query.startTime}
+            </if>
+            <if test="query.endTime != null">
+                AND create_time &lt;= #{query.endTime}
+            </if>
+
+            <!-- 更新时间范围 -->
+            <if test="query.updateStartTime != null">
+                AND update_time &gt;= #{query.updateStartTime}
+            </if>
+            <if test="query.updateEndTime != null">
+                <![CDATA[ AND update_time <= #{query.updateEndTime} ]]>
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
 </mapper>

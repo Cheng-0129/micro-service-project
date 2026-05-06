@@ -10,7 +10,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 /**
  *
@@ -45,9 +45,9 @@ public class Stock {
 
 	@Schema(description = "创建时间")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
-	private Timestamp createTime;
+	private LocalDateTime createTime;
 
 	@Schema(description = "更新时间")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
-	private Timestamp updateTime;
+	private LocalDateTime updateTime;
 }

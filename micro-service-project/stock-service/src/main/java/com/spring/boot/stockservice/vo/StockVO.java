@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 /**
  *
@@ -16,7 +16,7 @@ import java.sql.Timestamp;
 @Schema(description = "库存信息响应VO")
 public class StockVO {
 
-	@Schema(description = "库存ID", example = "1")
+	@Schema(description = "产品ID", example = "1")
 	private Long productId;
 	@Schema(description = "产品名称", example = "产品A")
 	private String productName;
@@ -25,7 +25,7 @@ public class StockVO {
 	@Schema(description = "单价", example = "10")
 	private BigDecimal price;
 	@Schema(description = "创建时间", example = "2026-01-01 00:00:00")
-	private Timestamp createTime;
+	private LocalDateTime createTime;
 	@Schema(description = "更新时间", example = "2027-01-01 00:00:00")
-	private Timestamp updateTime;
+	private LocalDateTime updateTime;
 }

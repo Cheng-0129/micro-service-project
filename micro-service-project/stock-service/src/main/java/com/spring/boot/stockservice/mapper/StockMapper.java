@@ -1,6 +1,9 @@
 package com.spring.boot.stockservice.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.spring.boot.stockservice.dto.StockQueryDTO;
 import com.spring.boot.stockservice.entity.Stock;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -18,4 +21,5 @@ public interface StockMapper extends BaseMapper<Stock> {
 
 	Integer deductStock(@Param("productId") Long productId, @Param("num") Integer num);
 
+	IPage<Stock> selectStockPage(Page<Stock> page, @Param("query") StockQueryDTO query);
 }
