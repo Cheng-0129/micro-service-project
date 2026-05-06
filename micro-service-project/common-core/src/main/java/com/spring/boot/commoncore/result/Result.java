@@ -1,5 +1,6 @@
 package com.spring.boot.commoncore.result;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
@@ -60,24 +61,35 @@ public class Result<T> {
 
 	//失败返回 ============================
 
-	public static Result<?> fail() {
+	public static <T> Result<T> fail() {
 		return new Result<>(ResultCode.FAILED.getCode(), ResultCode.FAILED.getMsg(), null);
 	}
 
-	public static Result<?> fail(String msg) {
+	public static <T> Result<T> fail(String msg) {
 		return new Result<>(ResultCode.FAILED.getCode(), msg, null);
 	}
 
-	public static Result<?> fail(ResultCode code) {
+	public static <T> Result<T> fail(ResultCode code) {
 		return new Result<>(code.getCode(), code.getMsg(), null);
 	}
 
-	public static Result<?> fail(ResultCode code, String customMsg) {
+	public static <T> Result<T> fail(ResultCode code, String customMsg) {
 		String finalMsg = customMsg.isBlank() ? code.getMsg() : customMsg;
 		return new Result<>(code.getCode(), finalMsg, null);
 	}
 
-	public static Result<?> fail(int code, String msg) {
+	public static <T> Result<T> fail(int code, String msg) {
 		return new Result<>(code, msg, null);
+	}
+
+
+	@JsonIgnore
+	public boolean isSuccess() {
+		return this.code == ResultCode.SUCCESS.getCode();
+	}
+
+	@JsonIgnore
+	public boolean isFail() {
+		return !isSuccess();
 	}
 }

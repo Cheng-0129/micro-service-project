@@ -1,11 +1,15 @@
 package com.spring.boot.userservice.controller;
 
+import com.spring.boot.commoncore.exception.BusinessException;
 import com.spring.boot.commoncore.result.Result;
+import com.spring.boot.commoncore.util.ExceptionUtil;
 import com.spring.boot.commoncore.vo.PageVO;
+import com.spring.boot.userservice.dto.OrderCreateDTO;
 import com.spring.boot.userservice.dto.UserCreateDTO;
 import com.spring.boot.userservice.dto.UserQueryDTO;
 import com.spring.boot.userservice.dto.UserUpdateDTO;
 import com.spring.boot.userservice.service.UserService;
+import com.spring.boot.userservice.vo.OrderVO;
 import com.spring.boot.userservice.vo.UserVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -119,5 +123,27 @@ public class UserController {
 		PageVO<UserVO> pageVO = userService.getUserPage(query);
 
 		return Result.success(pageVO, "查询成功");
+	}
+
+	@Operation(
+			summary = "下订单",
+			description = "传入订单信息，调用订单模块，创建订单。"
+	)
+	@PostMapping("/order")
+	public Result<OrderVO> order(@RequestBody @Valid OrderCreateDTO orderCreateDTO) {
+
+		try {
+			log.info("【用户模块】下单，请求参数：{}", orderCreateDTO);
+			OrderVO orderVO = userService.addOrder(orderCreateDTO);
+			log.info("【用户模块】下单成功，订单号：{}", orderVO.getOrderNo());
+			return Result.success(orderVO, "下单成功");
+		} catch (RuntimeException e) {
+			Throwable cause = ExceptionUtil.unwind(e);
+			if (cause instanceof BusinessException bizEx) {
+				log.warn("【用户模块】业务异常：{}", bizEx.getMessage());
+				return Result.fail(bizEx.getCode(), bizEx.getMessage());
+			}
+			throw e;
+		}
 	}
 }
