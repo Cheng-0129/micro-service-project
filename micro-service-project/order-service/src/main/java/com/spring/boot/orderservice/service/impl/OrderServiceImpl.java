@@ -3,6 +3,7 @@ package com.spring.boot.orderservice.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.spring.boot.commoncore.exception.BusinessException;
+import com.spring.boot.commoncore.result.Result;
 import com.spring.boot.orderservice.common.OrderStatus;
 import com.spring.boot.orderservice.dto.OrderCreateDTO;
 import com.spring.boot.orderservice.entity.Order;
@@ -18,6 +19,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+
+import static com.spring.boot.commoncore.result.ResultCode.FEIGN_ERROR;
 
 /**
  *
@@ -61,36 +64,36 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 		orderMapper.insert(order);
 		log.info("【订单模块】预订单创建成功，订单ID：{}，订单状态：PENDING", order.getId());
 
-		try{
-			log.info("【订单模块】调用库存服务扣减库存，productId={}, num={}",
-					dto.getProductId(), dto.getNum());
-			StockDeductVO deductVO = stockClient.deductStock(dto.getProductId(), dto.getNum())
-					.getData();
-			log.info("【订单模块】库存扣减成功，productName={}, price={}, 剩余库存={}",
-					deductVO.getProductName(), deductVO.getPrice(), deductVO.getStock());
+		log.info("【订单模块】调用库存服务扣减库存，订单号：{}，productId={}, num={}",
+				orderNo, dto.getProductId(), dto.getNum());
+		Result<StockDeductVO> result = stockClient.deductStock(dto.getProductId(), dto.getNum());
 
-			BigDecimal amount = deductVO.getPrice()
-					.multiply(new BigDecimal(dto.getNum()));
-			order.setAmount(amount);
-			order.setStatus(OrderStatus.CREATED.getCode());
-			orderMapper.updateById(order);
-			log.info("【订单模块】订单更新成功，订单ID：{}，金额：{}，状态：CREATED", order.getId(), amount);
-
-			OrderVO vo = new OrderVO();
-			vo.setOrderNo(orderNo);
-			vo.setUserId(dto.getUserId());
-			vo.setProductId(dto.getProductId());
-			vo.setProductName(deductVO.getProductName());
-			vo.setStock(deductVO.getStock());
-			vo.setAmount(amount);
-
-			log.info("【订单模块】订单创建完成，订单号：{}，产品：{}，数量：{}，金额：{}",
-					orderNo, deductVO.getProductName(), dto.getNum(), amount);
-			return vo;
-		} catch (Exception e) {
-			log.error("【订单模块】扣减库存失败，订单号：{}，productId={}, num={}",
-					orderNo, dto.getProductId(), dto.getNum(), e);
-			throw new BusinessException("扣库存失败，订单回滚");
+		if (result == null || result.isFail() || result.getData() == null) {
+			log.warn("【订单模块】扣减库存失败，订单号：{}", orderNo);
+			throw new BusinessException(FEIGN_ERROR.getCode(), "扣库存失败，订单回滚");
 		}
+
+		StockDeductVO deductVO = result.getData();
+		log.info("【订单模块】库存扣减成功，productName={}, price={}, 剩余库存={}",
+				deductVO.getProductName(), deductVO.getPrice(), deductVO.getStock());
+
+		BigDecimal amount = deductVO.getPrice()
+				.multiply(new BigDecimal(dto.getNum()));
+		order.setAmount(amount);
+		order.setStatus(OrderStatus.CREATED.getCode());
+		orderMapper.updateById(order);
+		log.info("【订单模块】订单更新成功，订单ID：{}，金额：{}，状态：CREATED", order.getId(), amount);
+
+		OrderVO vo = new OrderVO();
+		vo.setOrderNo(orderNo);
+		vo.setUserId(dto.getUserId());
+		vo.setProductId(dto.getProductId());
+		vo.setProductName(deductVO.getProductName());
+		vo.setStock(deductVO.getStock());
+		vo.setAmount(amount);
+
+		log.info("【订单模块】订单创建完成，订单号：{}，产品：{}，数量：{}，金额：{}",
+				orderNo, deductVO.getProductName(), dto.getNum(), amount);
+		return vo;
 	}
 }

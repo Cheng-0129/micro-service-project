@@ -2,6 +2,8 @@ package com.spring.boot.commoncore.exception;
 
 import com.spring.boot.commoncore.result.Result;
 import com.spring.boot.commoncore.result.ResultCode;
+import com.spring.boot.commoncore.util.ExceptionUtil;
+import feign.FeignException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -32,8 +34,9 @@ public class GlobalExceptionHandler {
 	// ==================== 业务异常 ====================
 
 	@ExceptionHandler(BusinessException.class)
+	@ResponseStatus(HttpStatus.OK)
 	public Result<?> handleBusinessException(BusinessException e) {
-		log.error("业务异常，code={}, msg={}", e.getCode(), e.getMessage(), e);
+		log.warn("业务异常，code={}, msg={}", e.getCode(), e.getMessage());
 		return Result.fail(e.getCode(), e.getMessage());
 	}
 
@@ -98,7 +101,23 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(Exception.class)
 	@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR) // HTTP 500
 	public Result<?> handleUnknownException(Exception e) {
+
+		Throwable cause = ExceptionUtil.unwind(e);
+
+		if (cause instanceof FeignException feignException) {
+			log.error("远程服务调用异常，url={}, status={}, body={}",
+					feignException.request().url(),
+					feignException.status(),
+					feignException.contentUTF8());
+			return switch (feignException.status()) {
+				case 503 -> Result.fail(503, "服务正在维护，请稍后重试");
+				case 500 -> Result.fail(500, "服务器繁忙，请稍后重试");
+				case 404 -> Result.fail(404, "请求的资源不存在");
+				default -> Result.fail(500, "服务器繁忙，请稍后重试");
+			};
+		}
+
 		log.error("系统未知异常", e);
-		return Result.fail(ResultCode.FAILED, "系统繁忙，请稍后重试");
+		return Result.fail(500, "系统内部错误");
 	}
 }

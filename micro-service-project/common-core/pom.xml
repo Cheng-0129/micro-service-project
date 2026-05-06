@@ -107,6 +107,10 @@
             <artifactId>mybatis-plus-jsqlparser</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-core</artifactId>
+        </dependency>
     </dependencies>
 
     <!-- 重点：公共模块 不要 SpringBoot 打包插件！！！ -->

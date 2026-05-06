@@ -37,12 +37,12 @@ springdoc:
 
 seata:
   enabled: true
-  tx-service-group: my_test_tx_group
+  tx-service-group: my_micro_service_group
   registry:
     type: file
   service:
     vgroup-mapping:
-      my_test_tx_group: default
+      my_micro_service_group: default
     grouplist:
       default: 127.0.0.1:8091
   client:
