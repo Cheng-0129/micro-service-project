@@ -8,9 +8,11 @@ import com.spring.boot.userservice.dto.OrderCreateDTO;
 import com.spring.boot.userservice.dto.UserCreateDTO;
 import com.spring.boot.userservice.dto.UserQueryDTO;
 import com.spring.boot.userservice.dto.UserUpdateDTO;
+import com.spring.boot.userservice.feign.OrderClient;
 import com.spring.boot.userservice.service.UserService;
 import com.spring.boot.userservice.vo.OrderVO;
 import com.spring.boot.userservice.vo.UserVO;
+import io.seata.spring.annotation.GlobalTransactional;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,6 +23,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import static com.spring.boot.commoncore.result.ResultCode.FEIGN_ERROR;
 
 /**
  *
@@ -37,6 +41,9 @@ public class UserController {
 
 	@Resource
 	private UserService userService;
+
+	@Resource
+	private OrderClient orderClient;
 
 	@Operation(
 			summary = "新增用户",
@@ -130,12 +137,26 @@ public class UserController {
 			description = "传入订单信息，调用订单模块，创建订单。"
 	)
 	@PostMapping("/order")
+	@GlobalTransactional(rollbackFor = Exception.class)
 	public Result<OrderVO> order(@RequestBody @Valid OrderCreateDTO orderCreateDTO) {
 
+		log.info("【用户模块】接收到下单请求，userId={}, productId={}, num={}",
+				orderCreateDTO.getUserId(),
+				orderCreateDTO.getProductId(),
+				orderCreateDTO.getNum());
+
 		try {
-			log.info("【用户模块】下单，请求参数：{}", orderCreateDTO);
-			OrderVO orderVO = userService.addOrder(orderCreateDTO);
+			Result<OrderVO> result = orderClient.createOrder(orderCreateDTO);
+
+			if (result == null || result.isFail() || result.getData() == null) {
+				log.warn("【用户模块】下单失败，userId={}, productId={}, num={}",
+						orderCreateDTO.getUserId(), orderCreateDTO.getProductId(), orderCreateDTO.getNum());
+				throw new BusinessException(FEIGN_ERROR.getCode(), "下单失败，请稍后重试");
+			}
+
+			OrderVO orderVO = result.getData();
 			log.info("【用户模块】下单成功，订单号：{}", orderVO.getOrderNo());
+
 			return Result.success(orderVO, "下单成功");
 		} catch (RuntimeException e) {
 			Throwable cause = ExceptionUtil.unwind(e);

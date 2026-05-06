@@ -1,6 +1,5 @@
 package com.spring.boot.userservice.vo;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -20,7 +19,6 @@ public class UserVO {
 			description = "用户ID",
 			example = "1"
 	)
-	@JsonProperty(value = "id", index = 1)
 	private Long userId;
 
 	@Schema(
