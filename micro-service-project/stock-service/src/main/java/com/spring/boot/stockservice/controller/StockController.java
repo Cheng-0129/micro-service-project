@@ -1,10 +1,12 @@
 package com.spring.boot.stockservice.controller;
 
 import com.spring.boot.commoncore.result.Result;
-import com.spring.boot.stockservice.service.StockValidationService;
+import com.spring.boot.commoncore.vo.PageVO;
 import com.spring.boot.stockservice.dto.StockCreateDTO;
-import com.spring.boot.stockservice.vo.StockDeductVO;
+import com.spring.boot.stockservice.dto.StockQueryDTO;
 import com.spring.boot.stockservice.dto.StockUpdateDTO;
+import com.spring.boot.stockservice.service.StockValidationService;
+import com.spring.boot.stockservice.vo.StockDeductVO;
 import com.spring.boot.stockservice.vo.StockVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -152,5 +154,18 @@ public class StockController {
 		StockDeductVO stockDeductVO = stockValidationService.deductStock(productId, num);
 		log.info("【库存模块】扣减库存成功，productId={}, num={}, stock={}, productName={}", productId, num, stockDeductVO.getStock(), stockDeductVO.getProductName());
 		return Result.success(stockDeductVO);
+	}
+
+	@Operation(
+			summary = "分页查询库存信息",
+			description = "传入分页参数和查询条件，返回分页后的库存列表，若库存不存在则返回空列表。"
+	)
+	@PostMapping("/page")
+	public Result<PageVO<StockVO>> getStockPage(@RequestBody @Valid StockQueryDTO query) {
+
+		log.info("【库存模块】收到分页查询请求，参数：{}", query);
+		PageVO<StockVO> pageVO = stockValidationService.getStockPage(query);
+		log.info("【库存模块】分页查询响应，返回{}条", pageVO.getRecords().size());
+		return Result.success(pageVO, "查询成功");
 	}
 }

@@ -1,6 +1,9 @@
 package com.spring.boot.stockservice.service.impl;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.spring.boot.stockservice.dto.StockQueryDTO;
 import com.spring.boot.stockservice.entity.Stock;
 import com.spring.boot.stockservice.mapper.StockMapper;
 import com.spring.boot.stockservice.service.StockService;
@@ -95,5 +98,25 @@ public class StockServiceDBImpl extends ServiceImpl<StockMapper, Stock> implemen
 			log.error("【数据层】扣减库存失败，productId={}, num={}", productId, num);
 		}
 		return stockAfter;
+	}
+
+	@Override
+	public IPage<Stock> getStockPage(StockQueryDTO query) {
+
+		long start = System.currentTimeMillis();
+		log.info("【数据层】开始分页查询库存，参数：{}", query);
+
+		Page<Stock> page = new Page<>(query.getPageNum(), query.getPageSize());
+		IPage<Stock> stockPage = stockMapper.selectStockPage(page, query);
+
+		long cost = System.currentTimeMillis() - start;
+
+		if (stockPage.getRecords().isEmpty()) {
+			log.info("【数据层】分页查询无匹配库存数据，参数：{}，耗时：{}ms", query, cost);
+		} else {
+			log.info("【数据层】分页查询成功，命中{}条，总{}条，耗时：{}ms",
+					stockPage.getRecords().size(), stockPage.getTotal(), cost);
+		}
+		return stockPage;
 	}
 }

@@ -1,6 +1,8 @@
 package com.spring.boot.stockservice.service.impl;
 
 import com.alibaba.fastjson.JSON;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.spring.boot.stockservice.dto.StockQueryDTO;
 import com.spring.boot.stockservice.entity.Stock;
 import com.spring.boot.stockservice.service.StockService;
 import jakarta.annotation.Resource;
@@ -184,6 +186,19 @@ public class StockServiceCacheImpl implements StockService {
 			log.info("【缓存层】库存扣减成功，已清除缓存");
 		}
 		return stockAfter;
+	}
+
+	@Override
+	public IPage<Stock> getStockPage(StockQueryDTO query) {
+
+		log.info("【缓存层】分页查询不缓存，直接查询数据库，参数：{}", query);
+
+		long start = System.currentTimeMillis();
+		IPage<Stock> stockPage = stockServiceDB.getStockPage(query);
+		long cost = System.currentTimeMillis() - start;
+
+		log.info("【缓存层】分页查询返回，总条数：{}，耗时：{}ms", stockPage.getTotal(), cost);
+		return stockPage;
 	}
 
 	private void setCacheWithRandomExpire(String key, Stock stock) {

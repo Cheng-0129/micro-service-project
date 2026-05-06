@@ -1,5 +1,7 @@
 package com.spring.boot.stockservice.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.spring.boot.stockservice.dto.StockQueryDTO;
 import com.spring.boot.stockservice.entity.Stock;
 
 /**
@@ -20,5 +22,6 @@ public interface StockService {
 
 	Integer deductStock(Long productId, Integer num);
 
+	IPage<Stock> getStockPage(StockQueryDTO query);
 }
 

@@ -1,11 +1,14 @@
 package com.spring.boot.stockservice.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.spring.boot.commoncore.exception.BusinessException;
+import com.spring.boot.commoncore.vo.PageVO;
 import com.spring.boot.stockservice.convert.StockConvertMapper;
-import com.spring.boot.stockservice.entity.Stock;
 import com.spring.boot.stockservice.dto.StockCreateDTO;
-import com.spring.boot.stockservice.vo.StockDeductVO;
+import com.spring.boot.stockservice.dto.StockQueryDTO;
 import com.spring.boot.stockservice.dto.StockUpdateDTO;
+import com.spring.boot.stockservice.entity.Stock;
+import com.spring.boot.stockservice.vo.StockDeductVO;
 import com.spring.boot.stockservice.vo.StockVO;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -147,5 +150,20 @@ public class StockValidationService {
 			throw BusinessException.of(STOCK_NOT_EXIST);
 		}
 		throw BusinessException.of(STOCK_INSUFFICIENT);
+	}
+
+	public PageVO<StockVO> getStockPage(StockQueryDTO query) {
+
+		log.info("【校验层】开始执行分页查询库存信息，请求参数：{}", query);
+		IPage<Stock> stockPage = stockService.getStockPage(query);
+		PageVO<StockVO> pageVO = stockConvertMapper.toPageVO(stockPage);
+
+		if (pageVO.getRecords().isEmpty()) {
+			log.info("【校验层】查询结果为空，参数：{}", query);
+		} else {
+			log.info("【校验层】查询成功，返回{}条，总{}条",
+					pageVO.getRecords().size(), pageVO.getTotal());
+		}
+		return pageVO;
 	}
 }
