@@ -1,6 +1,7 @@
 package com.spring.boot.commoncore.result;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,9 +17,10 @@ import lombok.ToString;
 @Setter
 @ToString
 @Schema(description = "统一响应结果")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Result<T> {
 
-	@Schema(description = "响应码", example = "200")
+	@Schema(description = "响应码", example = "0")
 	private int code;
 	@Schema(description = "响应信息", example = "操作成功")
 	private String msg;
@@ -42,7 +44,7 @@ public class Result<T> {
 	}
 
 	public static Result<Void> success(String msg) {
-		String finalMsg = msg.isBlank() ? ResultCode.SUCCESS.getMsg() : msg;
+		String finalMsg = (msg == null || msg.isBlank()) ? ResultCode.SUCCESS.getMsg() : msg;
 		return new Result<>(ResultCode.SUCCESS.getCode(), finalMsg, null);
 	}
 
@@ -51,7 +53,7 @@ public class Result<T> {
 	}
 
 	public static <T> Result<T> success(T data, String customMsg) {
-		String finalMsg = customMsg.isBlank() ? ResultCode.SUCCESS.getMsg() : customMsg;
+		String finalMsg = (customMsg == null || customMsg.isBlank()) ? ResultCode.SUCCESS.getMsg() : customMsg;
 		return new Result<>(ResultCode.SUCCESS.getCode(), finalMsg, data);
 	}
 
@@ -74,7 +76,7 @@ public class Result<T> {
 	}
 
 	public static <T> Result<T> fail(ResultCode code, String customMsg) {
-		String finalMsg = customMsg.isBlank() ? code.getMsg() : customMsg;
+		String finalMsg = (customMsg == null || customMsg.isBlank()) ? code.getMsg() : customMsg;
 		return new Result<>(code.getCode(), finalMsg, null);
 	}
 

@@ -43,6 +43,7 @@ public class GlobalExceptionHandler {
 	// ==================== 参数校验异常 ====================
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)
+	@ResponseStatus(HttpStatus.BAD_REQUEST)
 	public Result<?> handleMethodArgumentNotValid(MethodArgumentNotValidException e) {
 
 		List<FieldError> fieldErrors = e.getBindingResult().getFieldErrors();
@@ -56,6 +57,7 @@ public class GlobalExceptionHandler {
 	}
 
 	@ExceptionHandler(ConstraintViolationException.class)
+	@ResponseStatus(HttpStatus.BAD_REQUEST)
 	public Result<?> handleConstraintViolation(ConstraintViolationException e) {
 
 		String errorMsg = e.getConstraintViolations().stream()
