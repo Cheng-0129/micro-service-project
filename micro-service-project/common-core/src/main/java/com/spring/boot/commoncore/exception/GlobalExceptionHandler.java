@@ -106,6 +106,10 @@ public class GlobalExceptionHandler {
 
 		Throwable cause = ExceptionUtil.unwind(e);
 
+		if (cause instanceof BusinessException bizEx) {
+			log.warn("业务异常，code={}, msg={}", bizEx.getCode(), bizEx.getMessage());
+			return Result.fail(bizEx.getCode(), bizEx.getMessage());
+		}
 		if (cause instanceof FeignException feignException) {
 			log.error("远程服务调用异常，url={}, status={}, body={}",
 					feignException.request().url(),

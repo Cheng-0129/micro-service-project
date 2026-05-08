@@ -28,8 +28,9 @@ public enum ResultCode {
 
 	// ==================== 订单模块 30000-39999 ====================
 	ORDER_ADD_FAILED(30001, "订单添加失败"),
-	ORDER_NOT_EXIST(30002, "订单不存在")
-	;
+	ORDER_NOT_EXIST(30002, "订单不存在"),
+	ORDER_WAS_CANCELED(30003, "订单已取消"),
+	ORDER_STATUS_ERROR(30004, "订单状态异常");
 
 	private final int code;
 	private final String msg;
