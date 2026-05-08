@@ -1,5 +1,6 @@
 package com.spring.boot.orderservice.common;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -19,4 +20,15 @@ public enum OrderStatus {
 
 	private final int code;
 	private final String desc;
+
+	@JsonCreator
+	public static OrderStatus fromCode(Integer code) {
+		if (code == null) return null;
+		for (OrderStatus status : values()) {
+			if (status.code == code) {
+				return status;
+			}
+		}
+		throw new IllegalArgumentException("无效的订单状态: " + code);
+	}
 }

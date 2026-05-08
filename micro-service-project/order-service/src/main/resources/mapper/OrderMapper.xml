@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.spring.boot.orderservice.mapper.OrderMapper">
+
+    <select id="selectByOrderNo" resultType="com.spring.boot.orderservice.entity.Order">
+        SELECT * FROM t_order WHERE order_no = #{orderNo}
+    </select>
+
+    <select id="selectOrderPage" resultType="com.spring.boot.orderservice.entity.Order">
+        SELECT order_no, user_id, product_id, num, amount, status, create_time, update_time
+        FROM t_order
+        <where>
+            <if test="query.orderNo != null">
+                AND order_no = #{query.orderNo}
+            </if>
+
+            <if test="query.userId != null">
+                AND user_id = #{query.userId}
+            </if>
+
+            <!-- product_Id 精确匹配 -->
+            <if test="query.productId != null">
+                AND product_id = #{query.productId}
+            </if>
+
+            <if test="query.minNum != null">
+                AND num &gt;= #{query.minNum}
+            </if>
+            <if test="query.maxNum != null">
+                AND num &lt;= #{query.maxNum}
+            </if>
+
+            <if test="query.minAmount != null">
+                AND amount &gt;= #{query.minAmount}
+            </if>
+            <if test="query.maxAmount != null">
+                AND amount &lt;= #{query.maxAmount}
+            </if>
+
+            <if test="query.status != null">
+                AND status = #{query.status.code}
+            </if>
+
+            <if test="query.startTime != null">
+                AND create_time &gt;= #{query.startTime}
+            </if>
+            <if test="query.endTime != null">
+                AND create_time &lt;= #{query.endTime}
+            </if>
+
+            <if test="query.updateStartTime != null">
+                AND update_time &gt;= #{query.updateStartTime}
+            </if>
+            <if test="query.updateEndTime != null">
+                AND update_time &lt;= #{query.updateEndTime}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+</mapper>
