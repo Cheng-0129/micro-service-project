@@ -11,6 +11,7 @@
 
     <modules>
         <module>common-core</module>
+        <module>common-web</module>
         <module>user-service</module>
         <module>order-service</module>
         <module>stock-service</module>
@@ -22,12 +23,13 @@
         <spring-cloud.version>2023.0.1</spring-cloud.version>
         <spring-cloud-alibaba.version>2023.0.1.2</spring-cloud-alibaba.version>
         <alibaba-fastjson.version>2.0.32</alibaba-fastjson.version>
-
         <lombok.version>1.18.32</lombok.version>
+        <swagger_annotations_jakarta.version>2.2.21</swagger_annotations_jakarta.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <mybatis-plus.version>3.5.12</mybatis-plus.version>
         <mybatis-spring.version>3.0.3</mybatis-spring.version>
         <knife4j.version>4.5.0</knife4j.version>
+
 
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
@@ -37,6 +39,18 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- ===== 内部模块版本管理 ===== -->
+            <dependency>
+                <groupId>com.spring.boot</groupId>
+                <artifactId>common-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.spring.boot</groupId>
+                <artifactId>common-web</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
@@ -70,6 +84,13 @@
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
                 <version>${lombok.version}</version>
+            </dependency>
+
+            <!-- Swagger 注解 -->
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-annotations-jakarta</artifactId>
+                <version>${swagger_annotations_jakarta.version}</version>
             </dependency>
 
             <dependency>
@@ -130,6 +151,18 @@
                             </goals>
                         </execution>
                     </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                        <annotationProcessorPaths>
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                            </path>
+                        </annotationProcessorPaths>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>

@@ -16,15 +16,16 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-@Schema(description = "统一响应结果")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Result<T> {
 
 	@Schema(description = "响应码", example = "0")
 	private int code;
+
 	@Schema(description = "响应信息", example = "操作成功")
 	private String msg;
-	@Schema(description = "响应数据，具体结构取决于接口返回类型")
+
+	@Schema(description = "响应数据")
 	private T data;
 
 	//构造器 ============================

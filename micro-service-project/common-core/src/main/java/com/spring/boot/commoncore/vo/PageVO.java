@@ -6,12 +6,11 @@ import lombok.Data;
 import java.util.List;
 
 /**
- *
+ * 分页查询返回对象
  *
  * @author Chi Shoucheng
  * @datetime 2026/4/27 10:44
  */
-@Schema(description = "分页查询返回对象")
 @Data
 public class PageVO<T> {
 
