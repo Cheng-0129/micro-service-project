@@ -12,14 +12,12 @@ import com.spring.boot.userservice.feign.OrderClient;
 import com.spring.boot.userservice.service.UserService;
 import com.spring.boot.userservice.vo.OrderVO;
 import com.spring.boot.userservice.vo.UserVO;
-import io.seata.spring.annotation.GlobalTransactional;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -45,10 +43,8 @@ public class UserController {
 	@Resource
 	private OrderClient orderClient;
 
-	@Operation(
-			summary = "新增用户",
-			description = "传入用户基本信息，创建新用户并返回成功状态，若添加失败则返回10001。"
-	)
+	@Operation(summary = "新增用户",
+			description = "传入用户基本信息，创建新用户并返回成功状态，若添加失败则返回10001。")
 	@PostMapping("/add")
 	public Result<Void> add(@RequestBody @Valid UserCreateDTO userCreateDTO) {
 
@@ -58,19 +54,14 @@ public class UserController {
 
 		return Result.success("添加成功");
 	}
-	@Operation(
-			summary = "根据ID删除用户",
-			description = "传入用户ID，删除对应ID的用户，若用户不存在则返回10002。"
-	)
+
+	@Operation(summary = "根据ID删除用户",
+			description = "传入用户ID，删除对应ID的用户，若用户不存在则返回10002。")
 	@DeleteMapping("/delete/{id}")
 	public Result<Void> delete(@PathVariable("id")
 	                           @Parameter(
-			                           name = "id",
 			                           description = "用户ID",
-			                           example = "1",
-			                           required = true
-	                           )
-	                           @NotNull(message = "ID不能为空")
+			                           example = "1")
 	                           @Min(value = 1, message = "ID必须大于0")
 	                           Long id) {
 
@@ -81,10 +72,8 @@ public class UserController {
 		return Result.success("删除成功");
 	}
 
-	@Operation(
-			summary = "更改用户信息",
-			description = "传入用户ID和用户基本信息，更新对应ID的用户信息，若用户不存在则返回10002，若数据未改变则返回10003。"
-	)
+	@Operation(summary = "更改用户信息",
+			description = "传入用户ID和用户基本信息，更新对应ID的用户信息，若用户不存在则返回10002，若数据未改变则返回10003。")
 	@PutMapping("/update")
 	public Result<Void> update(@RequestBody @Valid UserUpdateDTO userUpdateDTO) {
 
@@ -95,19 +84,13 @@ public class UserController {
 		return Result.success("更新成功");
 	}
 
-	@Operation(
-			summary = "根据ID查询用户",
-			description = "传入用户ID，返回用户的详细信息（包括ID、姓名、年龄、邮箱、创建时间等），若用户不存在则返回10002。"
-	)
+	@Operation(summary = "根据ID查询用户",
+			description = "传入用户ID，返回用户的详细信息（包括ID、姓名、年龄、邮箱、创建时间等），若用户不存在则返回10002。")
 	@GetMapping("/get/{id}")
 	public Result<UserVO> getById(@PathVariable("id")
 	                              @Parameter(
-			                              name = "id",
 			                              description = "用户ID",
-			                              example = "1",
-			                              required = true
-	                              )
-	                              @NotNull(message = "ID不能为空")
+			                              example = "1")
 	                              @Min(value = 1, message = "ID必须大于0")
 	                              Long id) {
 
@@ -118,12 +101,10 @@ public class UserController {
 		return Result.success(userVO, "查询成功");
 	}
 
-	@Operation(
-			summary = "分页查询用户信息",
-			description = "传入分页参数和查询条件，返回分页后的用户列表，若用户不存在则返回空列表。"
-	)
-	@PostMapping("/page")
-	public Result<PageVO<UserVO>> getUserPage(@RequestBody @Valid UserQueryDTO query) {
+	@Operation(summary = "分页查询用户信息",
+			description = "传入分页参数和查询条件，返回分页后的用户列表，若用户不存在则返回空列表。")
+	@GetMapping("/page")
+	public Result<PageVO<UserVO>> getUserPage(@Valid UserQueryDTO query) {
 
 		log.info("【用户模块】分页查询用户信息，请求参数：{}", query);
 
@@ -132,12 +113,9 @@ public class UserController {
 		return Result.success(pageVO, "查询成功");
 	}
 
-	@Operation(
-			summary = "下订单",
-			description = "传入订单信息，调用订单模块，创建订单。"
-	)
+	@Operation(summary = "下订单",
+			description = "传入订单信息，调用订单模块，创建订单。")
 	@PostMapping("/order")
-	@GlobalTransactional(rollbackFor = Exception.class)
 	public Result<OrderVO> order(@RequestBody @Valid OrderCreateDTO orderCreateDTO) {
 
 		log.info("【用户模块】接收到下单请求，userId={}, productId={}, num={}",

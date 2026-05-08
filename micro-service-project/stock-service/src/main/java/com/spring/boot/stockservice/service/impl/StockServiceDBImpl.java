@@ -119,4 +119,12 @@ public class StockServiceDBImpl extends ServiceImpl<StockMapper, Stock> implemen
 		}
 		return stockPage;
 	}
+
+	@Override
+	public Integer addBackStock(Long productId, Integer num) {
+		log.debug("【数据层】开始回滚库存，productId={}, num={}", productId, num);
+		Integer stockAfter = this.stockMapper.addBackStock(productId, num);
+		log.debug("【数据层】回滚库存成功，剩余库存={}", stockAfter);
+		return stockAfter;
+	}
 }

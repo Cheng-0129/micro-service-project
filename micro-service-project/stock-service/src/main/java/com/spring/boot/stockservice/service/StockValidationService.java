@@ -8,6 +8,7 @@ import com.spring.boot.stockservice.dto.StockCreateDTO;
 import com.spring.boot.stockservice.dto.StockQueryDTO;
 import com.spring.boot.stockservice.dto.StockUpdateDTO;
 import com.spring.boot.stockservice.entity.Stock;
+import com.spring.boot.stockservice.vo.StockAddBackVO;
 import com.spring.boot.stockservice.vo.StockDeductVO;
 import com.spring.boot.stockservice.vo.StockVO;
 import jakarta.annotation.Resource;
@@ -62,7 +63,7 @@ public class StockValidationService {
 			throw BusinessException.of(STOCK_NOT_EXIST);
 		}
 
-		StockVO stockVO = stockConvertMapper.toVO(stock);
+		StockVO stockVO = stockConvertMapper.toStockVO(stock);
 
 		log.info("【校验层】库存查询成功，productId={}, productName={}, stock={}, price={}",
 				stockVO.getProductId(), stockVO.getProductName(), stockVO.getStock(), stockVO.getPrice());
@@ -145,10 +146,7 @@ public class StockValidationService {
 			return deductVO;
 		}
 
-		Stock current = stockService.getStockByProductId(productId);
-		if (current == null) {
-			throw BusinessException.of(STOCK_NOT_EXIST);
-		}
+		log.warn("【校验层】库存不足，productId={}, num={}", productId, num);
 		throw BusinessException.of(STOCK_INSUFFICIENT);
 	}
 
@@ -165,5 +163,27 @@ public class StockValidationService {
 					pageVO.getRecords().size(), pageVO.getTotal());
 		}
 		return pageVO;
+	}
+
+	public StockAddBackVO addBackStock(Long productId, Integer num) {
+
+		log.debug("【校验层】开始回滚库存，productId={}, num={}", productId, num);
+
+		Stock existing = stockService.getStockByProductId(productId);
+		if (existing == null) {
+			log.warn("【校验层】回滚失败，库存不存在");
+			throw BusinessException.of(STOCK_NOT_EXIST);
+		}
+
+		log.debug("【校验层】查询到已有记录，dbId={}, productId={}", existing.getId(), productId);
+
+		Integer stockAfter = stockService.addBackStock(productId, num);
+
+		StockAddBackVO addbackVO = new StockAddBackVO();
+		addbackVO.setProductId(productId);
+		addbackVO.setProductName(existing.getProductName());
+		addbackVO.setStock(stockAfter);
+		log.info("【校验层】库存回滚成功，productId={}, num={}, stock={}", productId, num, stockAfter);
+		return addbackVO;
 	}
 }

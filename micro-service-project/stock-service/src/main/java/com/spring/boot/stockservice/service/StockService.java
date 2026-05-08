@@ -23,5 +23,7 @@ public interface StockService {
 	Integer deductStock(Long productId, Integer num);
 
 	IPage<Stock> getStockPage(StockQueryDTO query);
+
+	Integer addBackStock(Long productId, Integer num);
 }
 

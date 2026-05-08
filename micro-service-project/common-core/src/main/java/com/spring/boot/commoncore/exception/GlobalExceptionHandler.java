@@ -110,12 +110,21 @@ public class GlobalExceptionHandler {
 			log.warn("业务异常，code={}, msg={}", bizEx.getCode(), bizEx.getMessage());
 			return Result.fail(bizEx.getCode(), bizEx.getMessage());
 		}
-		if (cause instanceof FeignException feignException) {
+
+		Result<?> feignResult = handleFeignException(cause);
+		if (feignResult != null) {
+			return feignResult;
+		}
+
+		log.error("系统未知异常", e);
+		return Result.fail(500, "系统内部错误");
+	}
+
+	private Result<?> handleFeignException(Throwable cause) {
+		if (cause instanceof FeignException fe) {
 			log.error("远程服务调用异常，url={}, status={}, body={}",
-					feignException.request().url(),
-					feignException.status(),
-					feignException.contentUTF8());
-			return switch (feignException.status()) {
+					fe.request().url(), fe.status(), fe.contentUTF8());
+			return switch (fe.status()) {
 				case 503 -> Result.fail(503, "服务正在维护，请稍后重试");
 				case 500 -> Result.fail(500, "服务器繁忙，请稍后重试");
 				case 404 -> Result.fail(404, "请求的资源不存在");
@@ -123,7 +132,12 @@ public class GlobalExceptionHandler {
 			};
 		}
 
-		log.error("系统未知异常", e);
-		return Result.fail(500, "系统内部错误");
+		if (cause instanceof java.net.ConnectException ||
+				cause instanceof java.net.SocketTimeoutException) {
+			log.error("服务连接失败：{}", cause.getMessage());
+			return Result.fail(503, "服务暂不可用，请稍后重试");
+		}
+
+		return null;
 	}
 }

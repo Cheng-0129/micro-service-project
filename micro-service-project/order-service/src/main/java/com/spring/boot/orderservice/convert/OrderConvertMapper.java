@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 @Mapper(componentModel = "spring")
 public interface OrderConvertMapper {
 
-	void fillDetailVOVO(Order order, @MappingTarget OrderDetailVO vo);
+	void fillDetailVO(Order order, @MappingTarget OrderDetailVO vo);
 
 	void fillCreateVO(Order order, @MappingTarget OrderCreateVO vo);
 
@@ -36,7 +36,7 @@ public interface OrderConvertMapper {
 			return null;
 		}
 		OrderDetailVO vo = new OrderDetailVO();
-		fillDetailVOVO(order, vo);
+		fillDetailVO(order, vo);
 		return vo;
 	}
 
