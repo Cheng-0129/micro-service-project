@@ -17,15 +17,8 @@
         <!-- 公共核心模块 -->
         <dependency>
             <groupId>com.spring.boot</groupId>
-            <artifactId>common-core</artifactId>
+            <artifactId>common-web</artifactId>
             <version>0.0.1-SNAPSHOT</version>
-        </dependency>
-
-        <!-- lombok -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
         </dependency>
 
         <!-- 数据库 -->

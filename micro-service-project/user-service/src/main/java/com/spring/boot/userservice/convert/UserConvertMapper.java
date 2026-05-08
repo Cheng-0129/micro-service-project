@@ -8,11 +8,13 @@ import com.spring.boot.userservice.entity.User;
 import com.spring.boot.userservice.vo.UserVO;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.ReportingPolicy;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring",
+		unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface UserConvertMapper {
 
 	void fillUser(UserCreateDTO userCreateDTO, @MappingTarget User user);

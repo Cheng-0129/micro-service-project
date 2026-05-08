@@ -10,6 +10,7 @@ import com.spring.boot.orderservice.vo.OrderDetailVO;
 import com.spring.boot.orderservice.vo.StockAddBackVO;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.ReportingPolicy;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,7 +21,8 @@ import java.util.stream.Collectors;
  * @author Chi Shoucheng
  * @datetime 2026/5/7 08:57
  */
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring",
+		unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface OrderConvertMapper {
 
 	void fillDetailVO(Order order, @MappingTarget OrderDetailVO vo);
