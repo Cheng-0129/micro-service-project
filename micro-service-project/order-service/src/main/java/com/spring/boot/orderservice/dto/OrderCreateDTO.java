@@ -12,6 +12,7 @@ import lombok.Data;
  * @datetime 2026/4/30 15:25
  */
 @Data
+@Schema(description = "订单创建DTO")
 public class OrderCreateDTO {
 
 	@Schema(description = "用户Id", example = "1")
