@@ -7,16 +7,51 @@ import com.spring.boot.userservice.dto.UserUpdateDTO;
 import com.spring.boot.userservice.entity.User;
 import com.spring.boot.userservice.vo.UserVO;
 import org.mapstruct.Mapper;
+import org.mapstruct.MappingTarget;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
 public interface UserConvertMapper {
 
-	User toEntity(UserCreateDTO userCreateDTO);
-	User toEntity(UserUpdateDTO userUpdateDTO);
+	void fillUser(UserCreateDTO userCreateDTO, @MappingTarget User user);
+	void fillUser(UserUpdateDTO userUpdateDTO, @MappingTarget User user);
 
-	UserVO toVO(User user);
-	List<UserVO> toVOList(List<User> userList);
-	PageVO<UserVO> toPageVO(IPage<User> userPage);
+	void fillUserVO(User user, @MappingTarget UserVO userVO);
+
+	default User toEntity(UserCreateDTO userCreateDTO) {
+		if (userCreateDTO == null) return null;
+		User user = new User();
+		fillUser(userCreateDTO, user);
+		return user;
+	}
+	default User toEntity(UserUpdateDTO userUpdateDTO) {
+		if (userUpdateDTO == null) return null;
+		User user = new User();
+		fillUser(userUpdateDTO, user);
+		return user;
+	}
+
+	default UserVO toUserVO(User user) {
+		if (user == null) return null;
+		UserVO userVO = new UserVO();
+		fillUserVO(user, userVO);
+		return userVO;
+	}
+
+	default List<UserVO> toVOList(List<User> userList) {
+		if (userList == null) return null;
+		return userList.stream().map(this::toUserVO).collect(Collectors.toList());
+	}
+	default PageVO<UserVO> toPageVO(IPage<User> userPage) {
+		if (userPage == null) return null;
+		PageVO<UserVO> pageVO = new PageVO<>();
+		pageVO.setCurrent(userPage.getCurrent());
+		pageVO.setSize(userPage.getSize());
+		pageVO.setTotal(userPage.getTotal());
+		pageVO.setPages(userPage.getPages());
+		pageVO.setRecords(toVOList(userPage.getRecords()));
+		return pageVO;
+	}
 }

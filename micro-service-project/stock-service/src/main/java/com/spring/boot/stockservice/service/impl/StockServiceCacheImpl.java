@@ -201,6 +201,16 @@ public class StockServiceCacheImpl implements StockService {
 		return stockPage;
 	}
 
+	@Override
+	public Integer addBackStock(Long productId, Integer num) {
+
+		log.debug("【缓存层】开始回滚库存，productId={}, num={}", productId, num);
+		Integer stockAfter = stockServiceDB.addBackStock(productId, num);
+		evictCache(productId);
+		log.info("【缓存层】库存回滚成功，productId={}, stock={}, 已清除缓存", productId, stockAfter);
+		return stockAfter;
+	}
+
 	private void setCacheWithRandomExpire(String key, Stock stock) {
 		if (stock != null) {
 			// 正常数据缓存30分钟 + 随机0-5分钟

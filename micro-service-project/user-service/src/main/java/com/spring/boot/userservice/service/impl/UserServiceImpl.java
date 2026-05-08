@@ -148,7 +148,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 			throw BusinessException.of(USER_NOT_EXIST, "用户[" + id + "]不存在");
 		}
 
-		UserVO userVO = userConvertMapper.toVO(user);
+		UserVO userVO = userConvertMapper.toUserVO(user);
 
 		log.info("【用户模块】用户信息查询成功，响应结果：{}", userVO);
 

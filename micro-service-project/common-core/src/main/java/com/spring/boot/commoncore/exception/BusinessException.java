@@ -3,6 +3,8 @@ package com.spring.boot.commoncore.exception;
 import com.spring.boot.commoncore.result.ResultCode;
 import lombok.Getter;
 
+import java.io.Serial;
+
 
 /**
  *
@@ -13,6 +15,7 @@ import lombok.Getter;
 @Getter
 public class BusinessException extends RuntimeException {
 
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	private final int code;

@@ -61,4 +61,8 @@
         ORDER BY create_time DESC
     </select>
 
+    <select id="addBackStock" resultType="int">
+        Update t_stock Set stock = stock + #{num} Where product_id = #{productId} RETURNING stock
+    </select>
+
 </mapper>

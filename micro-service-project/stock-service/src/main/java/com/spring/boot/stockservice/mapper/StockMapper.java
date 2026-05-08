@@ -22,4 +22,6 @@ public interface StockMapper extends BaseMapper<Stock> {
 	Integer deductStock(@Param("productId") Long productId, @Param("num") Integer num);
 
 	IPage<Stock> selectStockPage(Page<Stock> page, @Param("query") StockQueryDTO query);
+
+	Integer addBackStock(@Param("productId") Long productId, @Param("num") Integer num);
 }
