@@ -30,7 +30,15 @@ public enum ResultCode {
 	ORDER_ADD_FAILED(30001, "订单添加失败"),
 	ORDER_NOT_EXIST(30002, "订单不存在"),
 	ORDER_WAS_CANCELED(30003, "订单已取消"),
-	ORDER_STATUS_ERROR(30004, "订单状态异常");
+	ORDER_STATUS_ERROR(30004, "订单状态异常"),
+
+	// ==================== 网关模块 40000-49999 ====================
+	GATEWAY_SERVICE_UNAVAILABLE(40001, "服务暂不可用"),
+	GATEWAY_TIMEOUT(40002, "请求超时"),
+	GATEWAY_RATE_LIMIT(40003, "请求过于频繁，请稍后重试"),
+	GATEWAY_AUTH_FAILED(40004, "鉴权失败"),
+	GATEWAY_NOT_FOUND(40005, "请求路径不存在")
+	;
 
 	private final int code;
 	private final String msg;
