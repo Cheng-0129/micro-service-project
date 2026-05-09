@@ -1,82 +1,99 @@
-\# 微服务项目 - 多模块整合（目前已有用户/库存/订单）
+# 微服务项目 - 多模块整合
 
-\## 项目简介
+## 项目简介
+基于 **Spring Boot 3.2.0 + Spring Cloud Alibaba 2023.0.1.2** 构建的微服务项目，目前已整合用户服务、库存服务、订单服务、网关模块，支持 Knife4j 接口文档网关聚合，后续持续扩展中。
 
-基于 \*\*Spring Boot 3.x + Spring Cloud Alibaba\*\* 构建的微服务项目，包含用户服务、库存服务、订单服务模块。
+## 技术栈
+| 类别 | 技术 | 版本 |
+|------|------|------|
+| 核心框架 | Spring Boot | 3.2.0 |
+| 微服务框架 | Spring Cloud | 2023.0.1 |
+| 微服务框架 | Spring Cloud Alibaba | 2023.0.1.2 |
+| 网关 | Spring Cloud Gateway | 4.1.0 |
+| 负载均衡 | Spring Cloud LoadBalancer | 4.1.0 |
+| ORM 框架 | MyBatis-Plus | 3.5.12 |
+| 数据库 | PostgreSQL | 15+ |
+| 服务治理 | Nacos | 2.3.x |
+| 接口文档 | Knife4j | 4.5.0 |
+| 缓存 | Redis | 7.x |
+| 对象映射 | MapStruct | 1.5.5.Final |
+| JSON 处理 | Jackson | 2.15.3 |
+| 参数校验 | Jakarta Validation | 3.0.2 |
+| 注解增强 | Lombok | 1.18.32 |
+| 接口注解 | Swagger Annotations | 2.2.21 |
 
+## 项目结构
 
+micro-service-project
+├── common-core # 公共核心模块（工具类、异常处理、通用配置）
+├── common-web # 公共业务模块
+├── gateway # 网关模块（路由转发、Knife4j 接口文档聚合）
+├── user-service # 用户服务
+├── stock-service # 库存服务
+├── order-service # 订单服务
+└── pom.xml # 父工程 POM（统一依赖管理）
 
-\## 技术栈
+## 模块说明
+| 模块 | 说明 | 端口 |
+|------|------|------|
+| `common-core` | 公共核心模块，包含工具类、全局异常处理、通用配置等 | - |
+| `common-web` | 公共业务模块 | - |
+| `gateway` | 网关模块，路由转发、Knife4j 接口文档聚合 | 待补充 |
+| `user-service` | 用户服务 | 待补充 |
+| `stock-service` | 库存服务 | 待补充 |
+| `order-service` | 订单服务 | 待补充 |
 
-\- 核心框架：Spring Boot 3.x、Spring Cloud Alibaba
+## 快速开始
+### 1. 环境要求
+- **JDK**：17+
+- **Maven**：3.6+
+- **数据库**：PostgreSQL 15+
+- **中间件**：Nacos、Redis
 
-\- ORM 框架：MyBatis-Plus
+### 2. 克隆项目
+``bash
+git clone https://gitee.com/city_xing/micro_service_project.git
+cd micro-service-project
 
-\- 数据库：PostgreSQL
+### 3. 配置环境
+修改各模块 application.yml 中的以下配置：
 
-\- 服务治理：Nacos（服务注册与配置中心）
+数据库地址、用户名和密码
 
-\- 接口文档：Knife4j
+Nacos 连接信息
 
-\- 工具类库：Lombok、Fastjson、MapStruct
+Redis 连接信息
 
-\- 缓存：Redis
+### 4. 编译项目
+mvn clean install -DskipTests
 
+### 5. 启动服务
+按依赖顺序启动：common-core → 网关 → 业务服务
+#### 启动网关
+mvn spring-boot:run -pl gateway
 
+#### 启动用户服务
+mvn spring-boot:run -pl user-service
 
-\## 启动步骤
+#### 启动库存服务
+mvn spring-boot:run -pl stock-service
 
-1\.  克隆项目
+#### 启动订单服务
+mvn spring-boot:run -pl order-service
 
-&#x20;   bash
+### 6. 访问接口文档
+启动完成后，通过网关统一入口访问接口文档：
 
-&#x20;   git clone https://gitee.com/city\_xing/micro\_service\_project.git
+http://localhost:{gateway-port}/doc.html
 
-&#x20;   cd micro-service-project
+## 待办事项
+补充各服务端口号及网关端口
 
+完善网关路由规则说明
 
+完善服务间调用关系说明
 
-2\.  配置环境
+补充部署说明（Docker / Docker Compose）
 
-&#x20;   # 环境配置
-
-&#x20;   确保 JDK 版本为 17，Maven 版本为 3.6+
-
-&#x20;
-
-&#x20;   # yml配置
-
-&#x20;   修改各模块 `application.yml` 中的数据库地址、用户名和密码，Nacos、Redis 连接信息
-
-
-
-3\.  启动项目
-
-&#x20;   # 父工程编译
-
-&#x20;   mvn clean install -DskipTests
-
-
-
-&#x20;   # 启动各模块（按依赖顺序启动：common-core → 基础服务 → 业务服务）
-
-&#x20;   mvn spring-boot:run -pl user-service
-
-&#x20;   mvn spring-boot:run -pl stock-service
-
-&#x20;   mvn spring-boot:run -pl order-service 
-
-
-
-\## 模块说明
-
-\- `common-core`：公共核心模块（工具类、异常处理、通用配置）
-
-\- `common-web`：公共业务模块
-
-\- `order-service`：订单模块
-
-\- `stock-service`：库存模块
-
-\- `user-service`：用户模块
-
+## License
+待补充

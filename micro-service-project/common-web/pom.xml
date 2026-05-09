@@ -35,6 +35,24 @@
             <artifactId>lombok</artifactId>
         </dependency>
 
+        <!-- Nacos 服务发现（所有服务都需要） -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+        </dependency>
+
+        <!-- Nacos 配置中心（所有服务都需要） -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+        </dependency>
+
+        <!-- bootstrap -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-bootstrap</artifactId>
+        </dependency>
+
         <!-- knife4j 接口文档 -->
         <dependency>
             <groupId>com.github.xiaoymin</groupId>
@@ -46,17 +64,11 @@
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.mapstruct</groupId>
-            <artifactId>mapstruct-processor</artifactId>
-            <scope>provided</scope>
-        </dependency>
 
-        <!-- MyBatis-Plus 核心依赖 -->
+        <!-- MyBatis-Plus -->
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-boot-starter</artifactId>
-            <scope>provided</scope>
             <exclusions>
                 <exclusion>
                     <groupId>org.mybatis</groupId>
@@ -67,7 +79,6 @@
         <dependency>
             <groupId>org.mybatis</groupId>
             <artifactId>mybatis-spring</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.baomidou</groupId>
@@ -77,10 +88,10 @@
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-jsqlparser</artifactId>
-            <scope>provided</scope>
         </dependency>
 
-        <!-- feign-core -->
+        <!-- feign-core：版本由 spring-cloud-dependencies BOM 管理 -->
+        <!-- 如果服务用 OpenFeign，子模块自行引入 spring-cloud-starter-openfeign -->
         <dependency>
             <groupId>io.github.openfeign</groupId>
             <artifactId>feign-core</artifactId>

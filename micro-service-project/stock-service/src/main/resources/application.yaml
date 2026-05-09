@@ -38,6 +38,8 @@ knife4j:
     language: zh_cn
 
 springdoc:
+  api-docs:
+    path: /v3/api-docs
   default-flat-param-object: true
   packages-to-scan: com.spring.boot.stockservice.controller
   paths-to-match: /**
