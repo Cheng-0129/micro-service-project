@@ -1,4 +1,4 @@
-package com.spring.boot.commoncore.config;
+package com.spring.boot.commonweb.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;

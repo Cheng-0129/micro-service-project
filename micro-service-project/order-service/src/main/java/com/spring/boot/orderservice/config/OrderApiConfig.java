@@ -20,10 +20,12 @@ public class OrderApiConfig {
 	public OpenAPI orderOpenAPI() {
 		return new OpenAPI()
 				.info(new Info()
-						.title("订单服务 API 文档")
-						.description("订单管理相关接口，提供增加订单扣除库存的功能")
-						.version("v1.0.0")
-						.contact(new Contact().name("Chi Shoucheng")));
+						.title("订单服务")
+						.description("提供订单创建（含库存扣减）、取消（含库存回滚）、查询、删除功能，集成 Seata 分布式事务与 Sentinel 熔断降级" +
+								"\n\n---\n" +
+								"\n\n邮箱：1017191272@qq.com")
+						.version("v2.0.0")
+						.contact(new Contact().name("池守城")));
 	}
 
 	@Bean

@@ -20,10 +20,12 @@ public class UserApiConfig {
 	public OpenAPI userOpenAPI() {
 		return new OpenAPI()
 				.info(new Info()
-						.title("用户服务 API 文档")
-						.description("用户管理相关接口，提供用户的增删改查、分页查询功能")
-						.version("v1.0.0")
-						.contact(new Contact().name("Chi Shoucheng")));
+						.title("用户服务")
+						.description("提供用户的增删改查、分页查询功能，支持通过 Feign 调用订单模块下单，接入 Sentinel 熔断降级" +
+								"\n\n---\n" +
+								"\n\n邮箱：1017191272@qq.com")
+						.version("v2.0.0")
+						.contact(new Contact().name("池守城")));
 	}
 
 	@Bean

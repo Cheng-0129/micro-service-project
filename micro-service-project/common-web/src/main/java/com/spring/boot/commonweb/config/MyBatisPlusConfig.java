@@ -1,4 +1,4 @@
-package com.spring.boot.commoncore.config;
+package com.spring.boot.commonweb.config;
 
 import com.baomidou.mybatisplus.annotation.DbType;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;

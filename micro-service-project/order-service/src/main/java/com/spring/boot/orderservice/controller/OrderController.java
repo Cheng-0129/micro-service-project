@@ -1,7 +1,5 @@
 package com.spring.boot.orderservice.controller;
 
-import com.alibaba.csp.sentinel.annotation.SentinelResource;
-import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.spring.boot.commoncore.exception.BusinessException;
 import com.spring.boot.commoncore.result.Result;
 import com.spring.boot.commoncore.util.ExceptionUtil;
@@ -39,10 +37,8 @@ public class OrderController {
 	private OrderService orderService;
 
 	@Operation(summary = "创建订单",
-			description = "创建订单接口，传入userId、productId、num来创建订单，并调用库存模块扣除对应库存，成功则返回订单信息和库存余量，" +
-					"失败会触发订单和库存的回滚，" +
-					"订单模块内的订单号生成失败、订单插入失败、订单状态更新失败则返回30001，" +
-					"远程调用的订单模块出错（库存不足/库存不存在等情况），则返回1002。")
+			description = "传入用户ID、商品ID、数量，生成订单号并调用库存模块扣减库存。" +
+					"生成订单号失败/插入失败/更新失败返回 30001，远程调用失败返回 1002。触发限流/熔断返回 30006/30007")
 	@PostMapping("/create")
 	public Result<OrderCreateVO> createOrder(@RequestBody @Valid OrderCreateDTO order) {
 
@@ -61,8 +57,8 @@ public class OrderController {
 		}
 	}
 
-	@Operation(summary = "根据订单号查询订单信息",
-			description = "传入订单号，返回订单信息，若订单不存在则返回30002。")
+	@Operation(summary = "查询订单",
+			description = "根据订单号查询订单详细信息，订单不存在返回 30002")
 	@GetMapping("/{orderNo}")
 	public Result<OrderDetailVO> getByOrderNo(@PathVariable("orderNo")
 	                                          @Parameter(
@@ -77,8 +73,8 @@ public class OrderController {
 	}
 
 
-	@Operation(summary = "分页查询订单信息",
-			description = "传入分页参数和查询条件，返回分页后的库存列表，若库存不存在则返回空列表。")
+	@Operation(summary = "分页查询订单",
+			description = "支持按条件分页查询订单列表，无匹配数据返回空列表")
 	@GetMapping("/page")
 	public Result<PageVO<OrderDetailVO>> getOrderPage(@Valid OrderQueryDTO query) {
 
@@ -89,8 +85,9 @@ public class OrderController {
 	}
 
 	@Operation(summary = "取消订单",
-			description = "传入订单号，取消订单，若取消未处理订单，则只返回成功取消提示，若取消已创建订单，则返回取消订单信息和库存数量，" +
-					"若订单不存在则返回30002，若重复取消订单则返回30003，若无法取消订单则返回30004。")
+			description = "根据订单号取消订单。PENDING 状态直接取消并返回 null，CREATED 状态取消并回滚库存后返回库存信息。" +
+					"PAID 状态不可取消需走退款，CANCELLED 状态不可重复取消。" +
+					"订单不存在返回 30002，已取消返回 30003，订单状态异常返回 30004，库存回滚失败返回 30005。触发限流/熔断返回 30006/30007")
 	@PutMapping("/cancel/{orderNo}")
 	public Result<OrderAddBackVO> cancelOrder(@PathVariable("orderNo")
 	                                          @Parameter(
@@ -105,8 +102,8 @@ public class OrderController {
 		return Result.success(vo, "取消订单成功");
 	}
 
-	@Operation(summary = "删除订单信息",
-			description = "传入订单号，删除订单信息，只会删除已取消的订单，会报错阻止误删其他状态的订单号并返回30004，若订单不存在则返回30002。")
+	@Operation(summary = "删除订单",
+			description = "根据订单号删除订单记录，仅可删除已取消状态的订单。订单不存在返回 30002，状态不允许删除返回 30004")
 	@DeleteMapping("{orderNo}")
 	public Result<Void> deleteOrder(@PathVariable("orderNo")
 	                                @Parameter(
