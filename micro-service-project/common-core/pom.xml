@@ -16,24 +16,6 @@
     <description>公共核心模块</description>
 
     <dependencies>
-        <!-- lombok -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-        </dependency>
-
-        <!-- Jackson 注解（提供 @JsonInclude 等） -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-        </dependency>
-
-        <!-- Swagger 注解（纯注解包，不依赖 Web） -->
-        <dependency>
-            <groupId>io.swagger.core.v3</groupId>
-            <artifactId>swagger-annotations-jakarta</artifactId>
-        </dependency>
-
         <!-- slf4j -->
         <dependency>
             <groupId>org.slf4j</groupId>

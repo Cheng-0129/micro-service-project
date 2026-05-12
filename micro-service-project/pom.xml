@@ -29,9 +29,8 @@
         <mybatis-plus.version>3.5.12</mybatis-plus.version>
         <mybatis-spring.version>3.0.3</mybatis-spring.version>
         <knife4j.version>4.5.0</knife4j.version>
-        <jackson.version>2.15.3</jackson.version>
         <jakarta.validation-api.version>3.0.2</jakarta.validation-api.version>
-        <spring-cloud-loadbalancer.version>4.1.0</spring-cloud-loadbalancer.version>
+        <sentinel.version>1.8.8</sentinel.version>
 
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
@@ -80,14 +79,7 @@
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-starter-loadbalancer</artifactId>
-                <version>${spring-cloud-loadbalancer.version}</version>
-            </dependency>
-
-            <!-- Jackson 注解 -->
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-annotations</artifactId>
-                <version>${jackson.version}</version>
+                <version>4.1.0</version>
             </dependency>
 
             <!-- 校验 API -->
@@ -95,19 +87,6 @@
                 <groupId>jakarta.validation</groupId>
                 <artifactId>jakarta.validation-api</artifactId>
                 <version>${jakarta.validation-api.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.projectlombok</groupId>
-                <artifactId>lombok</artifactId>
-                <version>${lombok.version}</version>
-            </dependency>
-
-            <!-- Swagger 注解 -->
-            <dependency>
-                <groupId>io.swagger.core.v3</groupId>
-                <artifactId>swagger-annotations-jakarta</artifactId>
-                <version>${swagger.annotations.jakarta.version}</version>
             </dependency>
 
             <dependency>
@@ -157,21 +136,29 @@
                 <artifactId>knife4j-gateway-spring-boot-starter</artifactId>
                 <version>${knife4j.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>com.alibaba.csp</groupId>
+                <artifactId>sentinel-datasource-nacos</artifactId>
+                <version>${sentinel.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
-        </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>io.swagger.core.v3</groupId>
             <artifactId>swagger-annotations-jakarta</artifactId>
+            <version>${swagger.annotations.jakarta.version}</version>
         </dependency>
     </dependencies>
 

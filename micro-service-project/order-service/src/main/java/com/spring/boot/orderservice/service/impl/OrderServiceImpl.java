@@ -1,6 +1,8 @@
 package com.spring.boot.orderservice.service.impl;
 
 
+import com.alibaba.csp.sentinel.annotation.SentinelResource;
+import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -25,6 +27,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 
 import static com.spring.boot.commoncore.result.ResultCode.*;
+import static com.spring.boot.commoncore.util.ExceptionUtil.unwind;
 
 /**
  *
@@ -50,6 +53,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
 	@Override
 	@GlobalTransactional(rollbackFor = Exception.class)
+	@SentinelResource(value = "createOrder",
+			fallback = "createOrderFallback",
+			blockHandler = "createOrderBlock")
 	public OrderCreateVO createOrder(OrderCreateDTO dto) {
 
 		log.info("【订单模块】开始创建订单，userId={}, productId={}, num={}",
@@ -62,7 +68,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 		);
 		if (orderNo == null) {
 			log.error("【订单模块】生成订单号失败");
-			throw new BusinessException(ORDER_ADD_FAILED.getCode(), "生成订单号失败");
+			throw BusinessException.of(ORDER_ADD_FAILED, "生成订单号失败");
 		}
 		log.info("【订单模块】生成订单号：{}", orderNo);
 
@@ -72,7 +78,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 		int insertCount = orderMapper.insert(order);
 		if (insertCount <= 0) {
 			log.error("【订单模块】订单插入失败，订单ID：{}", order.getId());
-			throw new BusinessException(ORDER_ADD_FAILED.getCode(), "订单插入数据库失败");
+			throw BusinessException.of(ORDER_ADD_FAILED, "订单插入数据库失败");
 		}
 		log.info("【订单模块】预订单创建成功，订单ID：{}，订单状态：PENDING", order.getId());
 
@@ -82,7 +88,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
 		if (result == null || result.isFail() || result.getData() == null) {
 			log.warn("【订单模块】扣减库存失败，订单号：{}", orderNo);
-			throw new BusinessException(FEIGN_ERROR.getCode(), "扣库存失败，订单回滚");
+			throw BusinessException.of(FEIGN_ERROR, "扣库存失败，订单回滚");
 		}
 
 		StockDeductVO deductVO = result.getData();
@@ -97,7 +103,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 		int updateCount = orderMapper.updateById(order);
 		if (updateCount <= 0) {
 			log.error("【订单模块】订单状态更新失败，订单ID：{}", order.getId());
-			throw new BusinessException(ORDER_ADD_FAILED.getCode(), "订单更新失败");
+			throw BusinessException.of(ORDER_ADD_FAILED, "订单更新数据库失败");
 		}
 		log.info("【订单模块】订单更新成功，订单ID：{}，金额：{}，状态：CREATED", order.getId(), amount);
 
@@ -109,6 +115,20 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 		log.info("【订单模块】订单创建完成，订单号：{}，产品：{}，数量：{}，金额：{}",
 				orderNo, deductVO.getProductName(), dto.getNum(), amount);
 		return vo;
+	}
+	public OrderCreateVO createOrderFallback(OrderCreateDTO order, Throwable e) {
+		Throwable cause = unwind(e);
+		// 业务异常：原样抛出去，Controller 的 catch 会接住并返回正确 code
+		if (cause instanceof BusinessException) {
+			throw (BusinessException) cause;
+		}
+		// 系统异常：抛通用降级异常
+		log.error("【订单模块】创建订单降级，参数：{}，异常：{}", order, cause.getMessage());
+		throw BusinessException.of(ORDER_DEGRADE, "创建订单失败，服务降级，请稍后重试");
+	}
+	public OrderCreateVO createOrderBlock(OrderCreateDTO order, BlockException e) {
+		log.warn("【订单模块】创建订单被限流/熔断，参数：{}", order);
+		throw BusinessException.of(ORDER_FLOWING);
 	}
 
 	@Override
@@ -149,6 +169,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
 
 	@Override
+	@SentinelResource(value = "cancelOrder",
+			fallback = "cancelOrderFallback",
+			blockHandler = "cancelOrderBlock")
 	public OrderAddBackVO cancelOrder(Long orderNo) {
 
 		log.info("【订单模块】开始取消订单，订单号：{}", orderNo);
@@ -176,7 +199,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 				try {
 					Result<StockAddBackVO> result = stockClient.addBackStock(order.getProductId(), order.getNum());
 					if (result == null || result.isFail()) {
-						throw new BusinessException("库存回滚失败");
+						throw BusinessException.of(ORDER_ROLLBACK_FAILED, "库存回滚失败");
 					}
 					StockAddBackVO stockVO = result.getData();
 
@@ -201,6 +224,18 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 		}
 
 		throw BusinessException.of(ORDER_STATUS_ERROR, "订单状态异常，无法取消");
+	}
+	public OrderAddBackVO cancelOrderFallback(Long orderNo, Throwable e) {
+		Throwable cause = unwind(e);
+		if (cause instanceof BusinessException) {
+			throw (BusinessException) cause;
+		}
+		log.error("【订单模块】取消订单降级，订单号：{}，异常：{}", orderNo, cause.getMessage());
+		throw BusinessException.of(ORDER_DEGRADE, "取消订单失败，服务降级，请稍后重试");
+	}
+	public OrderAddBackVO cancelOrderBlock(Long orderNo, BlockException e) {
+		log.warn("【订单模块】取消订单被限流/熔断，订单号：{}", orderNo);
+		throw BusinessException.of(ORDER_FLOWING);
 	}
 
 	@Override
