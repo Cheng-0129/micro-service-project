@@ -20,10 +20,12 @@ public class StockApiConfig {
 	public OpenAPI stockOpenAPI() {
 		return new OpenAPI()
 				.info(new Info()
-						.title("库存服务 API 文档")
-						.description("库存管理相关接口，提供库存的增删改查功能")
-						.version("v1.0.0")
-						.contact(new Contact().name("Chi Shoucheng")));
+						.title("库存服务")
+						.description("提供库存的增删改查、分页查询、扣减库存、回滚库存功能，集成 Redis 缓存与 Sentinel 熔断降级" +
+								"\n\n---\n" +
+								"\n\n邮箱：1017191272@qq.com")
+						.version("v2.0.0")
+						.contact(new Contact().name("池守城")));
 	}
 
 	@Bean

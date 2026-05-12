@@ -36,7 +36,7 @@ public class StockController {
 	StockValidationService stockValidationService;
 
 	@Operation(summary = "新增库存",
-			description = "传入库存信息，创建新商品库存并返回成功状态，若添加失败则返回20001。")
+			description = "创建商品库存记录，成功返回操作成功，失败返回 20001（库存添加失败）")
 	@PostMapping("/add")
 	public Result<Void> addStock(@RequestBody @Valid StockCreateDTO stock) {
 
@@ -49,8 +49,8 @@ public class StockController {
 		return Result.success("库存新增成功");
 	}
 
-	@Operation(summary = "根据ID查询库存信息",
-			description = "传入产品ID，返回库存信息，若产品不存在则返回20002。")
+	@Operation(summary = "查询库存",
+			description = "根据商品ID查询库存信息，库存不存在返回 20002（库存不存在）")
 	@GetMapping("/{productId}")
 	public Result<StockVO> getStockByProductId(@PathVariable("productId")
 	                                           @Parameter(
@@ -68,8 +68,8 @@ public class StockController {
 		return Result.success(stockVO);
 	}
 
-	@Operation(summary = "根据ID更改库存信息",
-			description = "传入库存ID和新库存信息，若库存不存在则返回20002；若信息更新失败则返回20003")
+	@Operation(summary = "修改库存信息",
+			description = "根据商品ID更新库存信息，库存不存在返回 20002，更新失败返回 20003")
 	@PutMapping("/{productId}")
 	public Result<Void> updateStock(@PathVariable("productId")
 	                                @Parameter(
@@ -88,8 +88,8 @@ public class StockController {
 		return Result.success("库存更新成功");
 	}
 
-	@Operation(summary = "根据ID删除对应商品库存",
-			description = "传入库存ID删除对应商品库存，若库存不存在则返回20002")
+	@Operation(summary = "删除库存",
+			description = "根据商品ID删除库存记录，库存不存在返回 20002")
 	@DeleteMapping("{productId}")
 	public Result<Void> deleteStock(@PathVariable("productId")
 	                                @Parameter(
@@ -108,7 +108,8 @@ public class StockController {
 	}
 
 	@Operation(summary = "扣减库存",
-			description = "传入产品ID和数量，扣除对应数量的库存，成功则返回商品信息和库存余量，若库存不存在则返回20002，若库存不足则返回20004")
+			description = "根据商品ID和数量扣减库存，成功返回商品信息和剩余库存。" +
+					"库存不存在返回 20002，库存不足返回 20004。触发限流/熔断返回 20005/20006")
 	@PostMapping("/deduct")
 	public Result<StockDeductVO> deductStock(@RequestParam("productId")
 	                                         @Parameter(
@@ -128,8 +129,8 @@ public class StockController {
 		return Result.success(stockDeductVO);
 	}
 
-	@Operation(summary = "分页查询库存信息",
-			description = "传入分页参数和查询条件，返回分页后的库存列表，若库存不存在则返回空列表。")
+	@Operation(summary = "分页查询库存",
+			description = "支持按条件分页查询库存列表，无匹配数据返回空列表")
 	@GetMapping("/page")
 	public Result<PageVO<StockVO>> getStockPage(@Valid StockQueryDTO query) {
 
@@ -140,7 +141,7 @@ public class StockController {
 	}
 
 	@Operation(summary = "回滚库存",
-			description = "传入产品ID和数量，回滚对应数量的库存，成功则返回商品信息和库存余量，若库存不存在则返回20002")
+			description = "根据商品ID和数量回滚库存（取消订单时调用），成功返回商品信息和当前库存。库存不存在返回 20002")
 	@PostMapping("/addBack")
 	public Result<StockAddBackVO> addBackStock(@RequestParam("productId")
 	                                           @Parameter(
