@@ -1,5 +1,7 @@
 package com.spring.boot.stockservice.service;
 
+import com.alibaba.csp.sentinel.annotation.SentinelResource;
+import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.spring.boot.commoncore.exception.BusinessException;
 import com.spring.boot.commoncore.vo.PageVO;
@@ -18,6 +20,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import static com.spring.boot.commoncore.result.ResultCode.*;
+import static com.spring.boot.commoncore.util.ExceptionUtil.unwind;
 
 /**
  *
@@ -122,6 +125,9 @@ public class StockValidationService {
 		log.info("【校验层】库存删除成功");
 	}
 
+	@SentinelResource(value = "deductStock",
+			fallback = "deductStockFallback",
+			blockHandler = "deductStockBlock")
 	public StockDeductVO deductStock(Long productId, Integer num) {
 
 		log.debug("【校验层】开始扣除库存，productId={}, num={}", productId, num);
@@ -148,6 +154,18 @@ public class StockValidationService {
 
 		log.warn("【校验层】库存不足，productId={}, num={}", productId, num);
 		throw BusinessException.of(STOCK_INSUFFICIENT);
+	}
+	public StockDeductVO deductStockFallback(Long productId, Integer num, Throwable e) {
+		Throwable cause = unwind(e);
+		if (cause instanceof BusinessException) {
+			throw (BusinessException) cause;
+		}
+		log.error("【库存模块】扣减库存降级，productId={}, num={}", productId, num, e);
+		throw BusinessException.of(STOCK_DEGRADE, "扣减库存失败，服务降级，请稍后重试");
+	}
+	public StockDeductVO deductStockBlock(Long productId, Integer num, BlockException e) {
+		log.warn("【库存模块】扣减库存被限流/熔断，productId={}, num={}", productId, num);
+		throw BusinessException.of(STOCK_FLOWING);
 	}
 
 	public PageVO<StockVO> getStockPage(StockQueryDTO query) {

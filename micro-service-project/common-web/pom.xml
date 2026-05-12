@@ -29,12 +29,6 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- lombok -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-        </dependency>
-
         <!-- Nacos 服务发现（所有服务都需要） -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
