@@ -95,11 +95,8 @@ mvn clean install -DskipTests
 | **Seata** | 2.0.0 | `seata-server.bat` | - | - |
 
 ### 6. 启动服务
-按依赖顺序启动：common-core → 网关 → 业务服务
-```bash 
-# 启动网关
-mvn spring-boot:run -pl gateway
-
+按依赖顺序启动：中间件 → 业务服务 → 网关
+```bash
 # 启动用户服务
 mvn spring-boot:run -pl user-service
 
@@ -108,7 +105,11 @@ mvn spring-boot:run -pl stock-service
 
 # 启动订单服务
 mvn spring-boot:run -pl order-service
+
+# 启动网关
+mvn spring-boot:run -pl gateway
 ```
+> 网关放最后，等子服务都注册到 Nacos 了再启动。
 
 ### 7. 访问接口文档
 启动完成后，通过网关统一入口访问接口文档：
