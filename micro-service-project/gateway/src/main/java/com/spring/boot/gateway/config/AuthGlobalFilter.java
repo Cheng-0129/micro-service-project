@@ -1,10 +1,16 @@
 package com.spring.boot.gateway.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.spring.boot.commoncore.result.*;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
@@ -23,9 +29,11 @@ import java.util.List;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class AuthGlobalFilter implements GlobalFilter, Ordered {
 
 	private final AntPathMatcher pathMatcher = new AntPathMatcher();
+	private final ObjectMapper objectMapper;
 
 	/**
 	 * 白名单路径，不需要鉴权
@@ -36,15 +44,16 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
 			"/doc.html",
 			"/webjars/**",
 			"/favicon.ico",
-			"/user-service/v3/api-docs/**",
-			"/order-service/v3/api-docs/**",
-			"/stock-service/v3/api-docs/**",
-			"/swagger-resources/**",
-			"/swagger-ui/**"
+			// Swagger/Knife4j - 无论哪个服务前缀都放行
+			"/**/v3/api-docs/**",
+			"/**/swagger-resources/**",
+			"/**/swagger-ui/**",
+			"/**/swagger-ui.html"
 	);
 
 	@Override
 	public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+
 		Instant start = Instant.now();
 		ServerHttpRequest request = exchange.getRequest();
 		String path = request.getURI().getPath();
@@ -54,30 +63,28 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
 		// 1. 日志：记录请求信息
 		log.info("【网关】请求 {} {}，来源IP：{}", method, path, ip);
 
-		// 2. 跨域：添加 CORS 响应头
-		exchange.getResponse().getHeaders().add(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
-		exchange.getResponse().getHeaders().add(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, "GET, POST, PUT, DELETE, OPTIONS");
-		exchange.getResponse().getHeaders().add(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, "*");
-		exchange.getResponse().getHeaders().add(HttpHeaders.ACCESS_CONTROL_MAX_AGE, "3600");
+		// 2. 跨域（挪至yml）
 
-		// 3. 鉴权：白名单放行，其余检查 token
-		if (!isWhiteListed(path)) {
-			String token = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-			if (token == null || token.isBlank()) {
-				log.warn("【网关】鉴权失败，缺少token，路径：{}，IP：{}", path, ip);
-				exchange.getResponse().setStatusCode(org.springframework.http.HttpStatus.UNAUTHORIZED);
-				return exchange.getResponse().setComplete();
-			}
-			// TODO: 后续接入 JWT 校验逻辑，验证 token 有效性
-			log.debug("【网关】token校验通过，路径：{}", path);
+		// 3. 鉴权：OPTIONS 和 白名单放行，其余检查 token
+		if ("OPTIONS".equalsIgnoreCase(method) || isWhiteListed(path)) {
+			return chain.filter(exchange);
 		}
+		String token = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+		if (token == null || token.isBlank()) {
+			log.warn("【网关】鉴权失败，缺少token，路径：{}，IP：{}", path, ip);
+			return writeResponse(exchange, Result.fail(ResultCode.GATEWAY_TOKEN_MISSING));
+		}
+		// TODO: 后续接入 JWT 校验逻辑，验证 token 有效性
+		log.debug("【网关】token校验通过，路径：{}", path);
+
 
 		// 4. 继续执行，记录耗时
 		return chain.filter(exchange).doFinally(signal -> {
 			Duration duration = Duration.between(start, Instant.now());
+			HttpStatusCode code = exchange.getResponse().getStatusCode();
 			log.info("【网关】响应 {} {}，耗时：{}ms，状态码：{}",
 					method, path, duration.toMillis(),
-					exchange.getResponse().getStatusCode());
+					code != null ? code.value() : "UNKNOWN");
 		});
 	}
 
@@ -105,5 +112,21 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
 			ip = request.getRemoteAddress() != null ? request.getRemoteAddress().getAddress().getHostAddress() : "unknown";
 		}
 		return ip;
+	}
+
+	/**
+	 * 写入统一JSON响应
+	 */
+	private Mono<Void> writeResponse(ServerWebExchange exchange, Result<?> result) {
+		exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+		exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
+
+		return Mono.fromCallable(() -> objectMapper.writeValueAsBytes(result))
+				.map(bytes -> exchange.getResponse().bufferFactory().wrap(bytes))
+				.flatMap(buffer -> exchange.getResponse().writeWith(Mono.just(buffer)))
+				.onErrorResume(e -> {
+					log.error("【网关】写入响应失败", e);
+					return exchange.getResponse().setComplete();
+				});
 	}
 }

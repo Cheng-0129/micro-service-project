@@ -4,41 +4,60 @@ server:
 spring:
   application:
     name: gateway
-  profiles:
-    active: prod
   cloud:
     nacos:
       discovery:
         server-addr: 127.0.0.1:8848
-      config:
-        enabled: false
-        server-addr: 127.0.0.1:8848
-        file-extension: yaml
     gateway:
       discovery:
         locator:
-          enabled: true
-          lower-case-service-id: true
+          enabled: false
+          #lower-case-service-id: true
+      routes:
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/user-service/**
+          filters:
+            - StripPrefix=1
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/order-service/**
+          filters:
+            - StripPrefix=1
+        - id: stock-service
+          uri: lb://stock-service
+          predicates:
+            - Path=/stock-service/**
+          filters:
+            - StripPrefix=1
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowed-origin-patterns: "*"
+            allowed-methods: "GET, POST, PUT, DELETE, OPTIONS"
+            allowed-headers: "Content-Type, Authorization"
+            max-age: 3600
+    sentinel:
+      eager: true
 
 knife4j:
   gateway:
     enabled: true
-    strategy: manual
-    routes:
-      - name: 用户服务
-        service-name: user-service
-        url: /user-service/v3/api-docs
-        context-path: /user-service
-      - name: 订单服务
-        service-name: order-service
-        url: /order-service/v3/api-docs
-        context-path: /order-service
-      - name: 库存服务
-        service-name: stock-service
-        url: /stock-service/v3/api-docs
-        context-path: /stock-service
+    strategy: discover
+    discover:
+      enabled: true
+      version: openapi3
+      excluded-services:
+        - gateway
 
-# 暴露网关的内部监控和管理端点
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
 management:
   endpoints:
     web:
