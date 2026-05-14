@@ -1,4 +1,4 @@
-package com.spring.boot.userservice.dto;
+package com.spring.boot.userservice.dto.feign;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
@@ -12,7 +12,7 @@ import lombok.Data;
  * @datetime 2026/4/30 15:25
  */
 @Data
-public class OrderCreateDTO {
+public class OrderCreateFeignDTO {
 
 	@Schema(description = "用户Id", example = "1")
 	@NotNull(message = "用户Id不能为空")

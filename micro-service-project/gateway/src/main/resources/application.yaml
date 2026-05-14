@@ -8,6 +8,7 @@ spring:
     nacos:
       discovery:
         server-addr: 127.0.0.1:8848
+        ip: 127.0.0.1          # ← 加这行，注册到 Nacos 的 IP 改成 localhost
     gateway:
       discovery:
         locator:
@@ -41,6 +42,18 @@ spring:
             max-age: 3600
     sentinel:
       eager: true
+      transport:
+        dashboard: 127.0.0.1:8089   # Sentinel Dashboard 地址
+        port: 8719                   # 应用与 Dashboard 通信的端口（默认 8719）
+        client-ip: 127.0.0.1
+      datasource:
+        gw-flow: # 网关流控规则数据源
+          nacos:
+            server-addr: 127.0.0.1:8848
+            data-id: ${spring.application.name}-gw-flow-rules
+            group-id: SENTINEL_GROUP
+            data-type: json
+            rule-type: gw-flow       # 规则类型：网关流控
 
 knife4j:
   gateway:

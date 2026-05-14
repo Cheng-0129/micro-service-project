@@ -1,18 +1,18 @@
 package com.spring.boot.userservice.controller;
 
 import com.alibaba.csp.sentinel.annotation.SentinelResource;
-import com.alibaba.csp.sentinel.slots.block.BlockException;
+import com.spring.boot.commoncore.constant.FeignHeaders;
 import com.spring.boot.commoncore.exception.BusinessException;
 import com.spring.boot.commoncore.result.Result;
 import com.spring.boot.commoncore.util.ExceptionUtil;
 import com.spring.boot.commoncore.vo.PageVO;
-import com.spring.boot.userservice.dto.OrderCreateDTO;
+import com.spring.boot.userservice.dto.feign.OrderCreateFeignDTO;
 import com.spring.boot.userservice.dto.UserCreateDTO;
 import com.spring.boot.userservice.dto.UserQueryDTO;
 import com.spring.boot.userservice.dto.UserUpdateDTO;
 import com.spring.boot.userservice.feign.OrderClient;
 import com.spring.boot.userservice.service.UserService;
-import com.spring.boot.userservice.vo.OrderVO;
+import com.spring.boot.userservice.vo.feign.OrderFeignVO;
 import com.spring.boot.userservice.vo.UserVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -24,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import static com.spring.boot.commoncore.result.ResultCode.*;
+import static com.spring.boot.commoncore.result.ResultCode.FEIGN_ERROR;
 
 /**
  *
@@ -117,31 +117,34 @@ public class UserController {
 
 	@Operation(summary = "下订单",
 			description = "传入用户ID、商品ID、数量，调用订单模块创建订单并扣减库存。" +
-					"下单失败返回 1002（远程调用失败），触发限流/熔断返回 10004/10005")
+					"下单失败返回 1002（远程调用失败），触发熔断/限流返回 10004/10005")
 	@PostMapping("/order")
-	@SentinelResource(value = "userCreateOrder",
-			fallback = "userCreateOrderFallback",
-			blockHandler = "userCreateOrderBlock")
-	public Result<OrderVO> order(@RequestBody @Valid OrderCreateDTO orderCreateDTO) {
+	@SentinelResource(
+			value = "userOrder",                                     // 资源名称
+			blockHandler = "handleBlock",                        // 限流/降级后的处理方法
+			blockHandlerClass = UserBlockHandler.class,          // 降级处理类
+			fallback = "handleFallback",                         // 业务异常后的兜底方法
+			fallbackClass = UserBlockHandler.class)              // 兜底处理类
+	public Result<OrderFeignVO> order(@RequestBody @Valid OrderCreateFeignDTO orderCreateFeignDTO) {
 
 		log.info("【用户模块】接收到下单请求，userId={}, productId={}, num={}",
-				orderCreateDTO.getUserId(),
-				orderCreateDTO.getProductId(),
-				orderCreateDTO.getNum());
+				orderCreateFeignDTO.getUserId(),
+				orderCreateFeignDTO.getProductId(),
+				orderCreateFeignDTO.getNum());
 
 		try {
-			Result<OrderVO> result = orderClient.createOrder(orderCreateDTO);
+			Result<OrderFeignVO> result = orderClient.createOrder(orderCreateFeignDTO, FeignHeaders.SOURCE_USER_SERVICE);
 
 			if (result == null || result.isFail() || result.getData() == null) {
 				log.warn("【用户模块】下单失败，userId={}, productId={}, num={}",
-						orderCreateDTO.getUserId(), orderCreateDTO.getProductId(), orderCreateDTO.getNum());
+						orderCreateFeignDTO.getUserId(), orderCreateFeignDTO.getProductId(), orderCreateFeignDTO.getNum());
 				throw BusinessException.of(FEIGN_ERROR, "下单失败，请稍后重试");
 			}
 
-			OrderVO orderVO = result.getData();
-			log.info("【用户模块】下单成功，订单号：{}", orderVO.getOrderNo());
+			OrderFeignVO orderFeignVO = result.getData();
+			log.info("【用户模块】下单成功，订单号：{}", orderFeignVO.getOrderNo());
 
-			return Result.success(orderVO, "下单成功");
+			return Result.success(orderFeignVO, "下单成功");
 		} catch (RuntimeException e) {
 			Throwable cause = ExceptionUtil.unwind(e);
 			if (cause instanceof BusinessException bizEx) {
@@ -150,20 +153,5 @@ public class UserController {
 			}
 			throw e;
 		}
-	}
-	public Result<OrderVO> userCreateOrderFallback(OrderCreateDTO dto, Throwable e) {
-		Throwable cause = ExceptionUtil.unwind(e);
-		// 业务异常：返回原来的错误码和提示
-		if (cause instanceof BusinessException bizEx) {
-			log.warn("【用户模块】业务异常：{}", bizEx.getMessage());
-			return Result.fail(bizEx.getCode(), bizEx.getMessage());
-		}
-		// 系统异常：真正的降级
-		log.error("【用户模块】下单降级，参数：{}，异常：{}", dto, cause.getMessage());
-		return Result.fail(USER_DEGRADE, "下单失败，服务降级，请稍后重试");
-	}
-	public Result<OrderVO> userCreateOrderBlock(OrderCreateDTO dto, BlockException e) {
-		log.warn("【用户模块】下单被限流/熔断，参数：{}", dto);
-		return Result.fail(USER_FLOWING, "下单服务繁忙，请稍后重试");
 	}
 }

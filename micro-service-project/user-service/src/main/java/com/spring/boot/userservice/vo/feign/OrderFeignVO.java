@@ -1,4 +1,4 @@
-package com.spring.boot.userservice.vo;
+package com.spring.boot.userservice.vo.feign;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -12,8 +12,8 @@ import java.math.BigDecimal;
  * @datetime 2026/4/30 16:51
  */
 @Data
-@Schema(description = "订单信息")
-public class OrderVO {
+@Schema(description = "订单信息（Feign）")
+public class OrderFeignVO {
 
 	@Schema(description = "订单号", example = "1")
 	private Long orderNo;

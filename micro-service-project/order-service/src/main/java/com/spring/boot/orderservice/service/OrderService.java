@@ -15,7 +15,7 @@ import com.spring.boot.orderservice.vo.OrderCreateVO;
  */
 public interface OrderService {
 
-	OrderCreateVO createOrder(OrderCreateDTO dto);
+	OrderCreateVO createOrder(OrderCreateDTO dto, String source);
 	OrderDetailVO getByOrderNo(Long orderNo);
 	PageVO<OrderDetailVO> getOrderPage(OrderQueryDTO query);
 	OrderAddBackVO cancelOrder(Long orderNo);

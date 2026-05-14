@@ -1,10 +1,9 @@
 package com.spring.boot.orderservice.service.impl;
 
-import com.alibaba.csp.sentinel.annotation.SentinelResource;
-import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.spring.boot.commoncore.constant.FeignHeaders;
 import com.spring.boot.commoncore.exception.BusinessException;
 import com.spring.boot.commoncore.result.Result;
 import com.spring.boot.commoncore.vo.PageVO;
@@ -14,9 +13,17 @@ import com.spring.boot.orderservice.dto.OrderCreateDTO;
 import com.spring.boot.orderservice.dto.OrderQueryDTO;
 import com.spring.boot.orderservice.entity.Order;
 import com.spring.boot.orderservice.feign.StockClient;
+import com.spring.boot.orderservice.feign.UserClient;
 import com.spring.boot.orderservice.mapper.OrderMapper;
+import com.spring.boot.orderservice.mq.OrderMessageProducer;
 import com.spring.boot.orderservice.service.OrderService;
-import com.spring.boot.orderservice.vo.*;
+import com.spring.boot.orderservice.vo.OrderAddBackVO;
+import com.spring.boot.orderservice.vo.OrderCreateVO;
+import com.spring.boot.orderservice.vo.OrderDetailVO;
+import com.spring.boot.orderservice.vo.feign.StockAddBackFeignVO;
+import com.spring.boot.orderservice.vo.feign.StockDeductFeignVO;
+import com.spring.boot.orderservice.vo.feign.UserFeignVO;
+import feign.FeignException;
 import io.seata.spring.annotation.GlobalTransactional;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +33,6 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 
 import static com.spring.boot.commoncore.result.ResultCode.*;
-import static com.spring.boot.commoncore.util.ExceptionUtil.unwind;
 
 /**
  *
@@ -45,20 +51,32 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 	private StockClient stockClient;
 
 	@Resource
+	private UserClient userClient;
+
+	@Resource
 	private JdbcTemplate jdbcTemplate;
 
 	@Resource
 	private OrderConvertMapper orderConvertMapper;
 
+	@Resource
+	private OrderMessageProducer orderMessageProducer;
+
 	@Override
 	@GlobalTransactional(rollbackFor = Exception.class)
-	@SentinelResource(value = "createOrder",
-			fallback = "createOrderFallback",
-			blockHandler = "createOrderBlock")
-	public OrderCreateVO createOrder(OrderCreateDTO dto) {
+	public OrderCreateVO createOrder(OrderCreateDTO dto, String source) {
 
 		log.info("【订单模块】开始创建订单，userId={}, productId={}, num={}",
 				dto.getUserId(), dto.getProductId(), dto.getNum());
+
+		log.info("【订单模块】开始查询用户，userId={}", dto.getUserId());
+		if (!FeignHeaders.SOURCE_USER_SERVICE.equals(source)) {
+			UserFeignVO userVO = getUserById(dto.getUserId());
+			log.info("【订单模块】经查询用户存在，userId={}", userVO.getUserId());
+		} else {
+			log.info("【订单模块】来源为用户模块，跳过用户校验，userId={}", dto.getUserId());
+		}
+
 		Order order = orderConvertMapper.toEntity(dto);
 
 		Long orderNo = jdbcTemplate.queryForObject(
@@ -83,14 +101,14 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
 		log.info("【订单模块】调用库存服务扣减库存，订单号：{}，productId={}, num={}",
 				orderNo, dto.getProductId(), dto.getNum());
-		Result<StockDeductVO> result = stockClient.deductStock(dto.getProductId(), dto.getNum());
+		Result<StockDeductFeignVO> result = stockClient.deductStock(dto.getProductId(), dto.getNum());
 
 		if (result == null || result.isFail() || result.getData() == null) {
 			log.warn("【订单模块】扣减库存失败，订单号：{}", orderNo);
 			throw BusinessException.of(FEIGN_ERROR, "扣库存失败，订单回滚");
 		}
 
-		StockDeductVO deductVO = result.getData();
+		StockDeductFeignVO deductVO = result.getData();
 		log.info("【订单模块】库存扣减成功，productName={}, price={}, 剩余库存={}",
 				deductVO.getProductName(), deductVO.getPrice(), deductVO.getStock());
 
@@ -111,23 +129,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 		vo.setStock(deductVO.getStock());
 		vo.setAmount(amount);
 
+		orderMessageProducer.sendOrderCreateMessage(dto.getProductId());
+		log.info("【订单模块】订单创建消息已发送至MQ，订单号：{}", orderNo);
+
 		log.info("【订单模块】订单创建完成，订单号：{}，产品：{}，数量：{}，金额：{}",
 				orderNo, deductVO.getProductName(), dto.getNum(), amount);
 		return vo;
-	}
-	public OrderCreateVO createOrderFallback(OrderCreateDTO order, Throwable e) {
-		Throwable cause = unwind(e);
-		// 业务异常：原样抛出去，Controller 的 catch 会接住并返回正确 code
-		if (cause instanceof BusinessException) {
-			throw (BusinessException) cause;
-		}
-		// 系统异常：抛通用降级异常
-		log.error("【订单模块】创建订单降级，参数：{}，异常：{}", order, cause.getMessage());
-		throw BusinessException.of(ORDER_DEGRADE, "创建订单失败，服务降级，请稍后重试");
-	}
-	public OrderCreateVO createOrderBlock(OrderCreateDTO order, BlockException e) {
-		log.warn("【订单模块】创建订单被限流/熔断，参数：{}", order);
-		throw BusinessException.of(ORDER_FLOWING);
 	}
 
 	@Override
@@ -168,9 +175,6 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
 
 	@Override
-	@SentinelResource(value = "cancelOrder",
-			fallback = "cancelOrderFallback",
-			blockHandler = "cancelOrderBlock")
 	public OrderAddBackVO cancelOrder(Long orderNo) {
 
 		log.info("【订单模块】开始取消订单，订单号：{}", orderNo);
@@ -183,7 +187,6 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 		}
 		switch (OrderStatus.fromCode(order.getStatus())) {
 			case PENDING:
-				// TODO: 接入异步消息后，PENDING 状态需要调库存服务确认是否已扣库存
 				log.info("【订单模块】订单待处理，开始取消订单，订单号：{}", orderNo);
 				order.setStatus(OrderStatus.CANCELLED.getCode());
 				orderMapper.updateById(order);
@@ -192,15 +195,20 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
 			case CREATED:
 				log.info("【订单模块】订单已创建，开始取消订单，订单号：{}", orderNo);
-				order.setStatus(OrderStatus.CANCELLED.getCode());
-				orderMapper.updateById(order);
 
 				try {
-					Result<StockAddBackVO> result = stockClient.addBackStock(order.getProductId(), order.getNum());
+					Result<StockAddBackFeignVO> result = stockClient.addBackStock(order.getProductId(), order.getNum());
 					if (result == null || result.isFail()) {
 						throw BusinessException.of(ORDER_ROLLBACK_FAILED, "库存回滚失败");
 					}
-					StockAddBackVO stockVO = result.getData();
+
+					order.setStatus(OrderStatus.CANCELLED.getCode());
+					orderMapper.updateById(order);
+
+					StockAddBackFeignVO stockVO = result.getData();
+
+					orderMessageProducer.sendOrderCancelMessage(order.getProductId());
+					log.info("【订单模块】订单取消消息已发送至MQ，订单号：{}", orderNo);
 
 					OrderAddBackVO vo = orderConvertMapper.toOrderAddBackVO(stockVO);
 					vo.setOrderNo(orderNo);
@@ -210,7 +218,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 				} catch (Exception e) {
 					log.error("【订单模块】库存回滚失败，需人工处理！订单号={}, productId={}, num={}",
 							orderNo, order.getProductId(), order.getNum(), e);
-					return null;
+					throw BusinessException.of(ORDER_ROLLBACK_FAILED, "库存回滚失败，请人工处理");
 				}
 
 			case PAID:
@@ -223,18 +231,6 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 		}
 
 		throw BusinessException.of(ORDER_STATUS_ERROR, "订单状态异常，无法取消");
-	}
-	public OrderAddBackVO cancelOrderFallback(Long orderNo, Throwable e) {
-		Throwable cause = unwind(e);
-		if (cause instanceof BusinessException) {
-			throw (BusinessException) cause;
-		}
-		log.error("【订单模块】取消订单降级，订单号：{}，异常：{}", orderNo, cause.getMessage());
-		throw BusinessException.of(ORDER_DEGRADE, "取消订单失败，服务降级，请稍后重试");
-	}
-	public OrderAddBackVO cancelOrderBlock(Long orderNo, BlockException e) {
-		log.warn("【订单模块】取消订单被限流/熔断，订单号：{}", orderNo);
-		throw BusinessException.of(ORDER_FLOWING);
 	}
 
 	@Override
@@ -257,6 +253,21 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 			throw BusinessException.of(ORDER_NOT_EXIST);
 		}
 		log.info("【订单模块】订单删除成功");
+	}
+
+
+	private UserFeignVO getUserById(Long userId) {
+		try {
+			Result<UserFeignVO> result = userClient.getById(userId);
+			if (result == null || result.isFail()) {
+				log.warn("【订单模块】用户不存在，userId={}", userId);
+				throw BusinessException.of(ORDER_ADD_FAILED, "用户不存在");
+			}
+			return result.getData();
+		} catch (FeignException e) {
+			log.error("【订单模块】用户模块不可用，userId={}", userId);
+			throw BusinessException.of(USER_SERVICE_DEGRADE, "用户服务繁忙");
+		}
 	}
 }
 

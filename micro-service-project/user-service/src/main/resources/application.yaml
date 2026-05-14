@@ -2,6 +2,21 @@ server:
   port: 8081
 
 spring:
+  cloud:
+    sentinel:
+      eager: true
+      transport:
+        dashboard: 127.0.0.1:8089
+        port: 8720        # 和网关的 8719 区别开
+        client-ip: 127.0.0.1
+      datasource:
+        degrade: # 降级规则数据源
+          nacos:
+            server-addr: 127.0.0.1:8848
+            data-id: ${spring.application.name}-degrade-rules
+            group-id: SENTINEL_GROUP
+            data-type: json
+            rule-type: degrade
   datasource:
     driver-class-name: org.postgresql.Driver
     url: jdbc:postgresql://127.0.0.1:5432/micro_service_project
