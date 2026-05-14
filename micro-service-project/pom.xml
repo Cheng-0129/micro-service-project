@@ -31,6 +31,8 @@
         <knife4j.version>4.5.0</knife4j.version>
         <jakarta.validation-api.version>3.0.2</jakarta.validation-api.version>
         <sentinel.version>1.8.8</sentinel.version>
+        <rocketmq-spring-boot.version>2.3.4</rocketmq-spring-boot.version>
+        <rocketmq-client.version>5.3.1</rocketmq-client.version>
 
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
@@ -141,6 +143,19 @@
                 <groupId>com.alibaba.csp</groupId>
                 <artifactId>sentinel-datasource-nacos</artifactId>
                 <version>${sentinel.version}</version>
+            </dependency>
+
+            <!-- RocketMQ Spring Boot Starter -->
+            <dependency>
+                <groupId>org.apache.rocketmq</groupId>
+                <artifactId>rocketmq-spring-boot-starter</artifactId>
+                <version>${rocketmq-spring-boot.version}</version>
+            </dependency>
+            <!-- 强制锁定 rocketmq-client 版本，防止被其他依赖覆盖 -->
+            <dependency>
+                <groupId>org.apache.rocketmq</groupId>
+                <artifactId>rocketmq-client</artifactId>
+                <version>${rocketmq-client.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

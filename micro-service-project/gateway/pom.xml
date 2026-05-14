@@ -57,6 +57,17 @@
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-alibaba-sentinel-gateway</artifactId>
         </dependency>
+        <!-- Sentinel 核心启动器（触发控制台连接） -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-sentinel</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.alibaba.csp</groupId>
+                    <artifactId>sentinel-spring-webmvc-adapter</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
 
         <!-- Sentinel Nacos 数据源（让网关监听 Nacos 规则变更） -->
         <dependency>

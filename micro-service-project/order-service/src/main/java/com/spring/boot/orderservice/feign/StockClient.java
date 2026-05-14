@@ -1,8 +1,8 @@
 package com.spring.boot.orderservice.feign;
 
 import com.spring.boot.commoncore.result.Result;
-import com.spring.boot.orderservice.vo.StockAddBackVO;
-import com.spring.boot.orderservice.vo.StockDeductVO;
+import com.spring.boot.orderservice.vo.feign.StockAddBackFeignVO;
+import com.spring.boot.orderservice.vo.feign.StockDeductFeignVO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -17,8 +17,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 public interface StockClient {
 
 	@PostMapping("/stock/deduct")
-	Result<StockDeductVO> deductStock(@RequestParam("productId") Long productId, @RequestParam("num") Integer num);
+	Result<StockDeductFeignVO> deductStock(@RequestParam("productId") Long productId, @RequestParam("num") Integer num);
 
 	@PostMapping("/stock/addBack")
-	Result<StockAddBackVO> addBackStock(@RequestParam("productId") Long productId, @RequestParam("num") Integer num);
+	Result<StockAddBackFeignVO> addBackStock(@RequestParam("productId") Long productId, @RequestParam("num") Integer num);
 }

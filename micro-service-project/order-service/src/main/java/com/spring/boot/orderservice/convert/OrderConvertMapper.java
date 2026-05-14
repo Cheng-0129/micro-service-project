@@ -7,7 +7,7 @@ import com.spring.boot.orderservice.entity.Order;
 import com.spring.boot.orderservice.vo.OrderAddBackVO;
 import com.spring.boot.orderservice.vo.OrderCreateVO;
 import com.spring.boot.orderservice.vo.OrderDetailVO;
-import com.spring.boot.orderservice.vo.StockAddBackVO;
+import com.spring.boot.orderservice.vo.feign.StockAddBackFeignVO;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
@@ -29,7 +29,7 @@ public interface OrderConvertMapper {
 
 	void fillCreateVO(Order order, @MappingTarget OrderCreateVO vo);
 
-	void fillAddBackVO(StockAddBackVO stockAddBackVO, @MappingTarget OrderAddBackVO vo);
+	void fillAddBackVO(StockAddBackFeignVO stockAddBackFeignVO, @MappingTarget OrderAddBackVO vo);
 
 	void fillEntity(OrderCreateDTO dto, @MappingTarget Order order);
 
@@ -60,12 +60,12 @@ public interface OrderConvertMapper {
 		return vo;
 	}
 
-	default OrderAddBackVO toOrderAddBackVO(StockAddBackVO stockAddBackVO) {
-		if (stockAddBackVO == null) {
+	default OrderAddBackVO toOrderAddBackVO(StockAddBackFeignVO stockAddBackFeignVO) {
+		if (stockAddBackFeignVO == null) {
 			return null;
 		}
 		OrderAddBackVO vo = new OrderAddBackVO();
-		fillAddBackVO(stockAddBackVO, vo);
+		fillAddBackVO(stockAddBackFeignVO, vo);
 		return vo;
 	}
 

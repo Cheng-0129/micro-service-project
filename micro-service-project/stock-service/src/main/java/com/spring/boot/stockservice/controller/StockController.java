@@ -1,5 +1,6 @@
 package com.spring.boot.stockservice.controller;
 
+import com.alibaba.csp.sentinel.annotation.SentinelResource;
 import com.spring.boot.commoncore.result.Result;
 import com.spring.boot.commoncore.vo.PageVO;
 import com.spring.boot.stockservice.dto.StockCreateDTO;
@@ -93,7 +94,7 @@ public class StockController {
 	@DeleteMapping("{productId}")
 	public Result<Void> deleteStock(@PathVariable("productId")
 	                                @Parameter(
-											description = "产品ID",
+			                                description = "产品ID",
 			                                example = "1")
 	                                @Min(value = 1, message = "ID必须大于0")
 	                                Long productId) {
@@ -109,20 +110,27 @@ public class StockController {
 
 	@Operation(summary = "扣减库存",
 			description = "根据商品ID和数量扣减库存，成功返回商品信息和剩余库存。" +
-					"库存不存在返回 20002，库存不足返回 20004。触发限流/熔断返回 20005/20006")
+					"库存不存在返回 20002，库存不足返回 20004。触发熔断/限流返回 20005/20006")
 	@PostMapping("/deduct")
+	@SentinelResource(
+			value = "deductStock",
+			blockHandler = "handleBlock",
+			blockHandlerClass = StockBlockHandler.class,
+			fallback = "handleFallback",
+			fallbackClass = StockBlockHandler.class)
 	public Result<StockDeductVO> deductStock(@RequestParam("productId")
 	                                         @Parameter(
-													 description = "产品ID",
+			                                         description = "产品ID",
 			                                         example = "1")
 	                                         @Min(value = 1, message = "ID必须大于0")
 	                                         Long productId,
 	                                         @RequestParam("num")
 	                                         @Parameter(
-													 description = "购买数量",
+			                                         description = "购买数量",
 			                                         example = "20")
 	                                         @Min(value = 1, message = "数量必须大于0")
 	                                         Integer num) {
+
 		log.info("【库存模块】扣减库存，请求参数：productId={}, num={}", productId, num);
 		StockDeductVO stockDeductVO = stockValidationService.deductStock(productId, num);
 		log.info("【库存模块】扣减库存成功，productId={}, num={}, stock={}, productName={}", productId, num, stockDeductVO.getStock(), stockDeductVO.getProductName());
@@ -145,13 +153,13 @@ public class StockController {
 	@PostMapping("/addBack")
 	public Result<StockAddBackVO> addBackStock(@RequestParam("productId")
 	                                           @Parameter(
-													   description = "产品ID",
+			                                           description = "产品ID",
 			                                           example = "1")
 	                                           @Min(value = 1, message = "ID必须大于0")
 	                                           Long productId,
 	                                           @RequestParam("num")
 	                                           @Parameter(
-													   description = "购买数量",
+			                                           description = "购买数量",
 			                                           example = "20")
 	                                           @Min(value = 1, message = "数量必须大于0")
 	                                           Integer num) {

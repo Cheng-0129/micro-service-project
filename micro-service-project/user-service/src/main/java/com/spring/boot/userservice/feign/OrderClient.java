@@ -1,12 +1,13 @@
 package com.spring.boot.userservice.feign;
 
+import com.spring.boot.commoncore.constant.FeignHeaders;
 import com.spring.boot.commoncore.result.Result;
-import com.spring.boot.userservice.dto.OrderCreateDTO;
-import com.spring.boot.userservice.vo.OrderVO;
-import jakarta.validation.Valid;
+import com.spring.boot.userservice.dto.feign.OrderCreateFeignDTO;
+import com.spring.boot.userservice.vo.feign.OrderFeignVO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 /**
  *
@@ -18,5 +19,5 @@ import org.springframework.web.bind.annotation.RequestBody;
 public interface OrderClient {
 
 	@PostMapping("/order/create")
-	Result<OrderVO> createOrder(@RequestBody @Valid OrderCreateDTO order);
+	Result<OrderFeignVO> createOrder(@RequestBody OrderCreateFeignDTO order, @RequestHeader(FeignHeaders.SOURCE) String source);
 }

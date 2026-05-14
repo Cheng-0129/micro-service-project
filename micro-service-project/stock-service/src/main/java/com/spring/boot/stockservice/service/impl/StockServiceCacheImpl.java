@@ -182,8 +182,7 @@ public class StockServiceCacheImpl implements StockService {
 
 		Integer stockAfter = stockServiceDB.deductStock(productId, num);
 		if (stockAfter != null) {
-			evictCache(productId);
-			log.info("【缓存层】库存扣减成功，已清除缓存");
+			log.info("【缓存层】库存扣减成功");
 		}
 		return stockAfter;
 	}
@@ -206,8 +205,7 @@ public class StockServiceCacheImpl implements StockService {
 
 		log.debug("【缓存层】开始回滚库存，productId={}, num={}", productId, num);
 		Integer stockAfter = stockServiceDB.addBackStock(productId, num);
-		evictCache(productId);
-		log.info("【缓存层】库存回滚成功，productId={}, stock={}, 已清除缓存", productId, stockAfter);
+		log.info("【缓存层】库存回滚成功，productId={}, stock={}", productId, stockAfter);
 		return stockAfter;
 	}
 
@@ -250,7 +248,7 @@ public class StockServiceCacheImpl implements StockService {
 		}
 	}
 
-	private void evictCache(Long id) {
+	public void evictCache(Long id) {
 		String cacheKey = "product:" + id;
 		redisTemplate.delete(cacheKey);
 		log.debug("【缓存层】已清除缓存，key={}", cacheKey);
