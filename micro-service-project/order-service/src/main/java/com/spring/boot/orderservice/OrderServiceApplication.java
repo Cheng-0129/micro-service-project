@@ -5,7 +5,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 
-@SpringBootApplication(scanBasePackages = {"com.spring.boot.orderservice", "com.spring.boot.commoncore"})
+@SpringBootApplication(scanBasePackages = {"com.spring.boot.orderservice", "com.spring.boot.commonweb"})
 @EnableFeignClients
 @MapperScan("com.spring.boot.orderservice.mapper")
 public class OrderServiceApplication {

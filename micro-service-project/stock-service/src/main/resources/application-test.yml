@@ -1,8 +1,18 @@
 logging:
   level:
     root: info
-    com.spring.boot.c1: info
+    com.spring.boot.stockservice: info
     org.mybatis: info
     org.springframework.jdbc: info
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{50} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"
+  file:
+    name: /var/log/stockservice/app.log
+  logback:
+    rolling-policy:
+      max-file-size: 50MB
+      max-history: 3
+
+knife4j:
+  production: false

@@ -27,6 +27,7 @@
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>
         </dependency>
+
     </dependencies>
 
     <!-- 重点：公共模块 不要 SpringBoot 打包插件！！！ -->

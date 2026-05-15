@@ -21,6 +21,8 @@ public enum ResultCode {
 	DATA_NO_CHANGE(10003, "数据未改变"),
 	USER_SERVICE_DEGRADE(10004, "用户服务繁忙，请稍后重试"),
 	USER_SERVICE_RATE_LIMIT(10005, "请求过于频繁，请稍后重试"),
+	USER_PASSWORD_ERROR(10006, "密码错误"),
+	USER_EXIST(10007, "用户名已存在"),
 
 	// ==================== 库存模块 20000-29999 ====================
 	STOCK_ADD_FAILED(20001, "库存添加失败"),

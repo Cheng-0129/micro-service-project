@@ -1,8 +1,11 @@
 logging:
   level:
     root: info
-    com.spring.boot.c1: debug
+    com.spring.boot.orderservice: debug
     org.mybatis: debug
     org.springframework.jdbc: debug
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{50} - %msg%n"
+
+knife4j:
+  production: false
