@@ -1,14 +1,13 @@
 logging:
   level:
     root: warn
-    com.spring.boot.stockservice: info
-    org.mybatis: warn
-    org.springframework.jdbc: warn
+    com.spring.boot.gateway: info
+    org.springframework.cloud.gateway: warn
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{50} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"
   file:
-    name: /var/log/stockservice/app.log
+    name: /var/log/gateway/app.log
   logback:
     rolling-policy:
       max-file-size: 100MB
@@ -16,3 +15,6 @@ logging:
 
 knife4j:
   production: true
+
+jwt:
+  secret: ${JWT_SECRET}

@@ -21,4 +21,5 @@ public interface UserService extends IService<User> {
 	void updateUser(UserUpdateDTO userUpdateDTO);
 	UserVO getById(Long id);
 	PageVO<UserVO> getUserPage(UserQueryDTO query);
+	User login(String username, String password);
 }

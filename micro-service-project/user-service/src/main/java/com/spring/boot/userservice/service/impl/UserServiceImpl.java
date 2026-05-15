@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.spring.boot.commoncore.exception.BusinessException;
 import com.spring.boot.commoncore.vo.PageVO;
+import com.spring.boot.commonweb.component.IdGenerator;
 import com.spring.boot.userservice.convert.UserConvertMapper;
 import com.spring.boot.userservice.dto.UserCreateDTO;
 import com.spring.boot.userservice.dto.UserQueryDTO;
@@ -17,6 +18,8 @@ import com.spring.boot.userservice.service.UserService;
 import com.spring.boot.userservice.vo.UserVO;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,17 +49,26 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	@Resource
 	private JdbcTemplate jdbcTemplate;
 
+	@Autowired
+	@Qualifier("userIdGenerator")
+	private IdGenerator userIdGenerator;
+
 	@Transactional
 	public void addUser(UserCreateDTO userCreateDTO) {
 
-		log.info("【用户模块】开始执行添加用户，请求参数：{}", userCreateDTO);
+		log.info("【用户模块】开始用户注册/创建，请求参数：{}", userCreateDTO);
+
+		Long count = userMapper.selectCount(
+				new LambdaQueryWrapper<User>().eq(User::getName, userCreateDTO.getName())
+		);
+		if (count > 0) {
+			log.warn("【用户模块】添加用户失败，用户已存在，用户名：{}", userCreateDTO.getName());
+			throw BusinessException.of(USER_EXIST);
+		}
 
 		User user = userConvertMapper.toEntity(userCreateDTO);
 
-		Long userId = jdbcTemplate.queryForObject(
-				"UPDATE biz_id_counter SET current_max_id = current_max_id + 1 WHERE table_name = 't_user' RETURNING current_max_id",
-				Long.class
-		);
+		Long userId = userIdGenerator.nextId();
 
 		user.setUserId(userId);
 		user.setCreateTime(Timestamp.valueOf(LocalDateTime.now()));
@@ -65,7 +77,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		int insert = baseMapper.insert(user);
 
 		if(insert > 0) {
-			log.info("【用户模块】新增用户成功，响应结果：{}，数据库影响行数：{}", user.getId(), insert);
+			log.info("【用户模块】新增用户成功，业务ID：{}，数据库影响行数：{}", userId, insert);
 		}else {
 			log.warn("【用户模块】新增用户失败，未插入数据，请求参数：{}", userCreateDTO);
 			throw BusinessException.of(USER_ADD_FAILED);
@@ -172,6 +184,24 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
 		log.info("【用户模块】分页查询用户信息成功，总条数：{}", userPage.getTotal());
 		return pageVO;
+	}
+
+	@Override
+	public User login(String username, String password) {
+
+		log.info("【用户模块】开始执行用户登录，请求参数：username={}", username);
+		User user = userMapper.selectOne(
+				new LambdaQueryWrapper<User>().eq(User::getName, username)
+		);
+		if (user == null) {
+			log.warn("【用户模块】用户登录失败，用户不存在，用户名：{}", username);
+			throw BusinessException.of(USER_NOT_EXIST);
+		}
+		if (!user.getPassword().equals(password)) {
+			log.warn("【用户模块】用户登录失败，密码错误，用户名：{}", username);
+			throw BusinessException.of(USER_PASSWORD_ERROR);
+		}
+		return user;
 	}
 
 }

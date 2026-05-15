@@ -3,12 +3,15 @@ package com.spring.boot.stockservice.service.impl;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.spring.boot.commonweb.component.IdGenerator;
 import com.spring.boot.stockservice.dto.StockQueryDTO;
 import com.spring.boot.stockservice.entity.Stock;
 import com.spring.boot.stockservice.mapper.StockMapper;
 import com.spring.boot.stockservice.service.StockService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -28,15 +31,16 @@ public class StockServiceDBImpl extends ServiceImpl<StockMapper, Stock> implemen
 	@Resource
 	private JdbcTemplate jdbcTemplate;
 
+	@Autowired
+	@Qualifier("stockIdGenerator")
+	private IdGenerator stockIdGenerator;
+
 	@Override
 	public Stock addStock(Stock stock) {
 		log.debug("【数据层】开始新增数据，productName={}, stock={}, price={}",
 				stock.getProductName(), stock.getStock(), stock.getPrice());
 
-		Long productId = jdbcTemplate.queryForObject(
-				"UPDATE biz_id_counter SET current_max_id = current_max_id + 1 WHERE table_name = 't_stock' RETURNING current_max_id",
-				Long.class
-		);
+		Long productId = stockIdGenerator.nextId();
 
 		stock.setProductId(productId);
 

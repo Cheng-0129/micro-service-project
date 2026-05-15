@@ -4,7 +4,7 @@ import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-@SpringBootApplication(scanBasePackages = {"com.spring.boot.stockservice", "com.spring.boot.commoncore"})
+@SpringBootApplication(scanBasePackages = {"com.spring.boot.stockservice", "com.spring.boot.commonweb"})
 @MapperScan("com.spring.boot.stockservice.mapper")
 public class StockServiceApplication {
 

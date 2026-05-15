@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @EnableFeignClients
-@SpringBootApplication(scanBasePackages = {"com.spring.boot.userservice", "com.spring.boot.commoncore"})
+@SpringBootApplication(scanBasePackages = {"com.spring.boot.userservice", "com.spring.boot.commonweb"})
 @MapperScan("com.spring.boot.userservice.mapper")
 public class UserServiceApplication {
 

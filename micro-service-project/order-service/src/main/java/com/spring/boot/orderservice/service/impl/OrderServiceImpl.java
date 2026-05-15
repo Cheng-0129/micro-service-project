@@ -7,6 +7,7 @@ import com.spring.boot.commoncore.constant.FeignHeaders;
 import com.spring.boot.commoncore.exception.BusinessException;
 import com.spring.boot.commoncore.result.Result;
 import com.spring.boot.commoncore.vo.PageVO;
+import com.spring.boot.commonweb.component.IdGenerator;
 import com.spring.boot.orderservice.common.OrderStatus;
 import com.spring.boot.orderservice.convert.OrderConvertMapper;
 import com.spring.boot.orderservice.dto.OrderCreateDTO;
@@ -27,6 +28,8 @@ import feign.FeignException;
 import io.seata.spring.annotation.GlobalTransactional;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -62,6 +65,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 	@Resource
 	private OrderMessageProducer orderMessageProducer;
 
+	@Autowired
+	@Qualifier("orderIdGenerator")
+	private IdGenerator orderIdGenerator;
+
 	@Override
 	@GlobalTransactional(rollbackFor = Exception.class)
 	public OrderCreateVO createOrder(OrderCreateDTO dto, String source) {
@@ -79,14 +86,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
 		Order order = orderConvertMapper.toEntity(dto);
 
-		Long orderNo = jdbcTemplate.queryForObject(
-				"UPDATE biz_id_counter SET current_max_id = current_max_id + 1 WHERE table_name = 't_order' RETURNING current_max_id",
-				Long.class
-		);
-		if (orderNo == null) {
-			log.error("【订单模块】生成订单号失败");
-			throw BusinessException.of(ORDER_ADD_FAILED, "生成订单号失败");
-		}
+		Long orderNo = orderIdGenerator.nextId();
 		log.info("【订单模块】生成订单号：{}", orderNo);
 
 		order.setOrderNo(orderNo);

@@ -16,6 +16,8 @@ import com.spring.boot.userservice.vo.feign.OrderFeignVO;
 import com.spring.boot.userservice.vo.UserVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
@@ -125,10 +127,13 @@ public class UserController {
 			blockHandlerClass = UserBlockHandler.class,          // 降级处理类
 			fallback = "handleFallback",                         // 业务异常后的兜底方法
 			fallbackClass = UserBlockHandler.class)              // 兜底处理类
-	public Result<OrderFeignVO> order(@RequestBody @Valid OrderCreateFeignDTO orderCreateFeignDTO) {
+	public Result<OrderFeignVO> order(@RequestBody @Valid OrderCreateFeignDTO orderCreateFeignDTO,
+	                                  @Parameter(hidden = true) @RequestHeader("X-UserId") Long userId) {
+
+		orderCreateFeignDTO.setUserId(userId);
 
 		log.info("【用户模块】接收到下单请求，userId={}, productId={}, num={}",
-				orderCreateFeignDTO.getUserId(),
+				userId,
 				orderCreateFeignDTO.getProductId(),
 				orderCreateFeignDTO.getNum());
 

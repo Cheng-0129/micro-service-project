@@ -1,9 +1,12 @@
 package com.spring.boot.gateway.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.spring.boot.commoncore.result.*;
+import com.spring.boot.commoncore.result.Result;
+import com.spring.boot.commoncore.result.ResultCode;
+import com.spring.boot.gateway.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -35,12 +38,15 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
 	private final AntPathMatcher pathMatcher = new AntPathMatcher();
 	private final ObjectMapper objectMapper;
 
+	@Autowired
+	private JwtUtil jwtUtil;
+
 	/**
 	 * 白名单路径，不需要鉴权
 	 */
 	private static final List<String> WHITE_LIST = List.of(
-			"/user/login",
-			"/user/register",
+			"/user-service/user/login",
+			"/user-service/user/register",
 			"/doc.html",
 			"/webjars/**",
 			"/favicon.ico",
@@ -69,23 +75,37 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
 		if ("OPTIONS".equalsIgnoreCase(method) || isWhiteListed(path)) {
 			return chain.filter(exchange);
 		}
+
+		// 检查 Token
 		String token = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 		if (token == null || token.isBlank()) {
 			log.warn("【网关】鉴权失败，缺少token，路径：{}，IP：{}", path, ip);
 			return writeResponse(exchange, Result.fail(ResultCode.GATEWAY_TOKEN_MISSING));
 		}
-		// TODO: 后续接入 JWT 校验逻辑，验证 token 有效性
-		log.debug("【网关】token校验通过，路径：{}", path);
 
+		// 解析 Token，验证有效性
+		Long userId;
+		try {
+			userId = jwtUtil.getUserIdFromToken(token);
+		} catch (Exception e) {
+			log.warn("【网关】token无效或过期，路径：{}，IP：{}", path, ip);
+			return writeResponse(exchange, Result.fail(ResultCode.GATEWAY_TOKEN_EXPIRED));
+		}
+
+		// Token 有效，把 userId 传给下游
+		ServerHttpRequest modifiedRequest = request.mutate()
+				.header("X-UserId", String.valueOf(userId))
+				.build();
 
 		// 4. 继续执行，记录耗时
-		return chain.filter(exchange).doFinally(signal -> {
-			Duration duration = Duration.between(start, Instant.now());
-			HttpStatusCode code = exchange.getResponse().getStatusCode();
-			log.info("【网关】响应 {} {}，耗时：{}ms，状态码：{}",
-					method, path, duration.toMillis(),
-					code != null ? code.value() : "UNKNOWN");
-		});
+		return chain.filter(exchange.mutate().request(modifiedRequest).build())
+				.doFinally(signal -> {
+					Duration duration = Duration.between(start, Instant.now());
+					HttpStatusCode code = exchange.getResponse().getStatusCode();
+					log.info("【网关】响应 {} {}，耗时：{}ms，状态码：{}",
+							method, path, duration.toMillis(),
+							code != null ? code.value() : "UNKNOWN");
+				});
 	}
 
 	@Override

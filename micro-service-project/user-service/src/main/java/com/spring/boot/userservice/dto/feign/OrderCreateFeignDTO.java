@@ -14,8 +14,7 @@ import lombok.Data;
 @Data
 public class OrderCreateFeignDTO {
 
-	@Schema(description = "用户Id", example = "1")
-	@NotNull(message = "用户Id不能为空")
+	@Schema(description = "用户Id，由网关自动填充", example = "1")
 	@Min(value = 1, message = "用户Id不能小于0")
 	private Long userId;
 

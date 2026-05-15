@@ -1,15 +1,22 @@
 logging:
   level:
     root: warn
-    com.spring.boot.c1: info
+    com.spring.boot.userservice: info
     org.mybatis: warn
     org.springframework.jdbc: warn
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{50} - %msg%n"
-
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"
   file:
     name: /var/log/userservice/app.log
   logback:
     rolling-policy:
       max-file-size: 100MB
       max-history: 7
+
+knife4j:
+  production: true
+
+jwt:
+  secret: ${JWT_SECRET}
+  expire: ${JWT_EXPIRE:86400000}
