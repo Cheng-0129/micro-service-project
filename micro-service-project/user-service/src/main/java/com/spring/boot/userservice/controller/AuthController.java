@@ -43,7 +43,8 @@ public class AuthController {
 	private JwtUtil jwtUtil;
 
 
-	@Operation(summary = "用户登录")
+	@Operation(summary = "用户登录",
+			description = "验证用户名和密码，成功返回用户信息和JWT令牌，用户不存在返回 10002，密码错误返回 10006")
 	@PostMapping("/login")
 	public Result<LoginVO> login(@RequestBody @Valid LoginDTO dto) {
 		log.info("【用户模块】开始执行用户登录，请求参数：{}", dto);
@@ -55,7 +56,8 @@ public class AuthController {
 		return Result.success(vo, "登录成功");
 	}
 
-	@Operation(summary = "用户注册")
+	@Operation(summary = "用户注册",
+			description = "创建新用户账号，成功返回操作成功，用户名已存在返回 10007，添加失败返回 10004")
 	@PostMapping("/register")
 	public Result<Void> register(@RequestBody @Valid UserCreateDTO dto) {
 		log.info("【用户模块】开始执行用户注册，请求参数：{}", dto);
@@ -63,4 +65,5 @@ public class AuthController {
 		log.info("【用户模块】用户注册成功，用户名：{}", dto.getName());
 		return Result.success("注册成功");
 	}
+
 }

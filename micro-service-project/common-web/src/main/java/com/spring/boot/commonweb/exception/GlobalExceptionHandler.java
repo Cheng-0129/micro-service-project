@@ -1,5 +1,6 @@
 package com.spring.boot.commonweb.exception;
 
+import com.spring.boot.commoncore.exception.BusinessException;
 import com.spring.boot.commoncore.result.Result;
 import com.spring.boot.commoncore.result.ResultCode;
 import com.spring.boot.commoncore.util.ExceptionUtil;
@@ -33,9 +34,9 @@ public class GlobalExceptionHandler {
 
 	// ==================== 业务异常 ====================
 
-	@ExceptionHandler(com.spring.boot.commoncore.exception.BusinessException.class)
+	@ExceptionHandler(BusinessException.class)
 	@ResponseStatus(HttpStatus.OK)
-	public Result<?> handleBusinessException(com.spring.boot.commoncore.exception.BusinessException e) {
+	public Result<?> handleBusinessException(BusinessException e) {
 		log.warn("业务异常，code={}, msg={}", e.getCode(), e.getMessage());
 		return Result.fail(e.getCode(), e.getMessage());
 	}
@@ -106,7 +107,7 @@ public class GlobalExceptionHandler {
 
 		Throwable cause = ExceptionUtil.unwind(e);
 
-		if (cause instanceof com.spring.boot.commoncore.exception.BusinessException bizEx) {
+		if (cause instanceof BusinessException bizEx) {
 			log.warn("业务异常，code={}, msg={}", bizEx.getCode(), bizEx.getMessage());
 			return Result.fail(bizEx.getCode(), bizEx.getMessage());
 		}

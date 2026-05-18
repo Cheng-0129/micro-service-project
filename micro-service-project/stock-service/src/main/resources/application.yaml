@@ -74,4 +74,5 @@ seata:
       db-type: postgresql
 
 rocketmq:
-  name-server: ${ROCKETMQ_ADDR:localhost:9876}
+  name-server: ${ROCKETMQ_NAME_SERVER:127.0.0.1:9876}
+

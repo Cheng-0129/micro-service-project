@@ -9,6 +9,7 @@ import com.spring.boot.commoncore.exception.BusinessException;
 import com.spring.boot.commoncore.vo.PageVO;
 import com.spring.boot.commonweb.component.IdGenerator;
 import com.spring.boot.userservice.convert.UserConvertMapper;
+import com.spring.boot.userservice.dto.UpdatePasswordDTO;
 import com.spring.boot.userservice.dto.UserCreateDTO;
 import com.spring.boot.userservice.dto.UserQueryDTO;
 import com.spring.boot.userservice.dto.UserUpdateDTO;
@@ -20,7 +21,8 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,14 +46,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	private UserConvertMapper userConvertMapper;
 
 	@Resource
-	private  UserMapper userMapper;
-
-	@Resource
-	private JdbcTemplate jdbcTemplate;
+	private UserMapper userMapper;
 
 	@Autowired
 	@Qualifier("userIdGenerator")
 	private IdGenerator userIdGenerator;
+
+	@Autowired
+	private PasswordEncoder passwordEncoder;
 
 	@Transactional
 	public void addUser(UserCreateDTO userCreateDTO) {
@@ -71,14 +73,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		Long userId = userIdGenerator.nextId();
 
 		user.setUserId(userId);
+		user.setPassword(passwordEncoder.encode(userCreateDTO.getPassword()));
 		user.setCreateTime(Timestamp.valueOf(LocalDateTime.now()));
 		user.setUpdateTime(Timestamp.valueOf(LocalDateTime.now()));
 
 		int insert = baseMapper.insert(user);
 
-		if(insert > 0) {
+		if (insert > 0) {
 			log.info("【用户模块】新增用户成功，业务ID：{}，数据库影响行数：{}", userId, insert);
-		}else {
+		} else {
 			log.warn("【用户模块】新增用户失败，未插入数据，请求参数：{}", userCreateDTO);
 			throw BusinessException.of(USER_ADD_FAILED);
 		}
@@ -90,9 +93,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
 		int delete = baseMapper.deleteById(id);
 
-		if(delete > 0) {
+		if (delete > 0) {
 			log.info("【用户模块】删除用户成功，响应结果：{}，删除行数：{}", id, delete);
-		}else {
+		} else {
 			log.warn("【用户模块】删除用户失败，用户不存在，请求参数：{}", id);
 			throw BusinessException.of(USER_NOT_EXIST);
 		}
@@ -109,22 +112,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
 		boolean hasChange = false;
 
-		if(userUpdateDTO.getName() != null && !Objects.equals(userUpdateDTO.getName(), oldUser.getName())) {
+		if (userUpdateDTO.getName() != null && !Objects.equals(userUpdateDTO.getName(), oldUser.getName())) {
 			hasChange = true;
 		}
 
-		if(userUpdateDTO.getPassword() != null && !Objects.equals(userUpdateDTO.getPassword(), oldUser.getPassword())) {
+		if (userUpdateDTO.getAge() != null && !Objects.equals(userUpdateDTO.getAge(), oldUser.getAge())) {
 			hasChange = true;
 		}
 
-		if(userUpdateDTO.getAge() != null && !Objects.equals(userUpdateDTO.getAge(), oldUser.getAge())) {
+		if (userUpdateDTO.getEmail() != null && !Objects.equals(userUpdateDTO.getEmail(), oldUser.getEmail())) {
 			hasChange = true;
 		}
-
-		if(userUpdateDTO.getEmail() != null && !Objects.equals(userUpdateDTO.getEmail(), oldUser.getEmail())) {
-			hasChange = true;
-		}
-		if(!hasChange) {
+		if (!hasChange) {
 			log.warn("【用户模块】更新用户信息：本次提交数据与数据库一致，未产生数据变更，用户ID：{}，请求参数：{}", userUpdateDTO.getUserId(), userUpdateDTO);
 			throw BusinessException.of(DATA_NO_CHANGE);
 		}
@@ -136,6 +135,43 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		baseMapper.updateById(newUser);
 
 		log.info("【用户模块】更新用户信息成功，响应结果：{}", userUpdateDTO.getUserId());
+	}
+
+	public void updatePassword(UpdatePasswordDTO updatePasswordDTO, Long userId) {
+
+		log.info("【用户模块】开始执行更新用户密码，请求参数：{}", updatePasswordDTO);
+
+		User existingUser = userMapper.selectOne(
+						new LambdaQueryWrapper<User>()
+								.select(User::getPassword)
+								.eq(User::getUserId, userId));
+
+		// 2. 判空
+		if (existingUser == null || existingUser.getPassword() == null) {
+			log.warn("【用户模块】更新用户密码失败，用户不存在，用户ID：{}", userId);
+			throw BusinessException.of(USER_NOT_EXIST);
+		}
+
+		String oldPassword = existingUser.getPassword();
+
+		if (!passwordEncoder.matches(updatePasswordDTO.getOldPassword(), oldPassword)) {
+			log.warn("【用户模块】更新用户密码失败，密码错误，用户ID：{}", userId);
+			throw BusinessException.of(USER_PASSWORD_ERROR);
+		}
+
+		if (updatePasswordDTO.getOldPassword().equals(updatePasswordDTO.getNewPassword())) {
+			log.warn("【用户模块】更新用户密码失败，新密码不能与旧密码一致，用户ID：{}，请求参数：{}", userId, updatePasswordDTO);
+			throw BusinessException.of(DATA_NO_CHANGE, "新密码不能与旧密码相同");
+		}
+
+		User user = new User();
+		user.setUserId(userId);
+		user.setPassword(passwordEncoder.encode(updatePasswordDTO.getNewPassword()));
+		user.setUpdateTime(Timestamp.valueOf(LocalDateTime.now()));
+
+		baseMapper.updateById(user);
+
+		log.info("【用户模块】更新用户密码成功，用户ID：{}", userId);
 	}
 
 	public UserVO getById(Long id) {
@@ -155,7 +191,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
 		User user = baseMapper.selectOne(wrapper);
 
-		if(user == null) {
+		if (user == null) {
 			log.warn("【用户模块】用户信息查询失败，用户不存在，请求参数：{}", id);
 			throw BusinessException.of(USER_NOT_EXIST, "用户[" + id + "]不存在");
 		}
@@ -197,7 +233,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 			log.warn("【用户模块】用户登录失败，用户不存在，用户名：{}", username);
 			throw BusinessException.of(USER_NOT_EXIST);
 		}
-		if (!user.getPassword().equals(password)) {
+		if (!passwordEncoder.matches(password, user.getPassword())) {
 			log.warn("【用户模块】用户登录失败，密码错误，用户名：{}", username);
 			throw BusinessException.of(USER_PASSWORD_ERROR);
 		}

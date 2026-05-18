@@ -25,13 +25,15 @@ import com.spring.boot.orderservice.vo.feign.StockAddBackFeignVO;
 import com.spring.boot.orderservice.vo.feign.StockDeductFeignVO;
 import com.spring.boot.orderservice.vo.feign.UserFeignVO;
 import feign.FeignException;
+import io.seata.core.context.RootContext;
 import io.seata.spring.annotation.GlobalTransactional;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 
 import java.math.BigDecimal;
 
@@ -55,9 +57,6 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
 	@Resource
 	private UserClient userClient;
-
-	@Resource
-	private JdbcTemplate jdbcTemplate;
 
 	@Resource
 	private OrderConvertMapper orderConvertMapper;
@@ -129,8 +128,8 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 		vo.setStock(deductVO.getStock());
 		vo.setAmount(amount);
 
-		orderMessageProducer.sendOrderCreateMessage(dto.getProductId());
-		log.info("【订单模块】订单创建消息已发送至MQ，订单号：{}", orderNo);
+		String xid = RootContext.getXID();
+		log.info("【订单模块】当前全局事务 XID: {}", xid);
 
 		log.info("【订单模块】订单创建完成，订单号：{}，产品：{}，数量：{}，金额：{}",
 				orderNo, deductVO.getProductName(), dto.getNum(), amount);
@@ -175,6 +174,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
 
 	@Override
+	@Transactional(rollbackFor = Exception.class)
 	public OrderAddBackVO cancelOrder(Long orderNo) {
 
 		log.info("【订单模块】开始取消订单，订单号：{}", orderNo);

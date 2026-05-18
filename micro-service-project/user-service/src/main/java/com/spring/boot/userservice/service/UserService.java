@@ -2,6 +2,7 @@ package com.spring.boot.userservice.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.spring.boot.commoncore.vo.PageVO;
+import com.spring.boot.userservice.dto.UpdatePasswordDTO;
 import com.spring.boot.userservice.dto.UserCreateDTO;
 import com.spring.boot.userservice.dto.UserQueryDTO;
 import com.spring.boot.userservice.dto.UserUpdateDTO;
@@ -22,4 +23,5 @@ public interface UserService extends IService<User> {
 	UserVO getById(Long id);
 	PageVO<UserVO> getUserPage(UserQueryDTO query);
 	User login(String username, String password);
+	void updatePassword(UpdatePasswordDTO updatePasswordDTO, Long userId);
 }

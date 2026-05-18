@@ -28,9 +28,6 @@ public class StockServiceDBImpl extends ServiceImpl<StockMapper, Stock> implemen
 	@Resource
 	StockMapper stockMapper;
 
-	@Resource
-	private JdbcTemplate jdbcTemplate;
-
 	@Autowired
 	@Qualifier("stockIdGenerator")
 	private IdGenerator stockIdGenerator;

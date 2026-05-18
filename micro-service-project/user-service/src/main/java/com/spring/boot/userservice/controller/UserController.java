@@ -6,6 +6,7 @@ import com.spring.boot.commoncore.exception.BusinessException;
 import com.spring.boot.commoncore.result.Result;
 import com.spring.boot.commoncore.util.ExceptionUtil;
 import com.spring.boot.commoncore.vo.PageVO;
+import com.spring.boot.userservice.dto.UpdatePasswordDTO;
 import com.spring.boot.userservice.dto.feign.OrderCreateFeignDTO;
 import com.spring.boot.userservice.dto.UserCreateDTO;
 import com.spring.boot.userservice.dto.UserQueryDTO;
@@ -38,7 +39,7 @@ import static com.spring.boot.commoncore.result.ResultCode.FEIGN_ERROR;
 @RequestMapping("/user")
 @Validated
 @Slf4j
-@Tag(name = "用户管理模块", description = "用户的增删改查、分页查询接口")
+@Tag(name = "用户管理模块", description = "用户的增删改查、分页查询、下订单接口")
 public class UserController {
 
 	@Resource
@@ -48,7 +49,7 @@ public class UserController {
 	private OrderClient orderClient;
 
 	@Operation(summary = "新增用户",
-			description = "创建新用户，成功返回操作成功，失败返回 10001（用户添加失败）")
+			description = "创建新用户，成功返回操作成功，用户添加失败则返回 10001")
 	@PostMapping("/add")
 	public Result<Void> add(@RequestBody @Valid UserCreateDTO userCreateDTO) {
 
@@ -60,7 +61,7 @@ public class UserController {
 	}
 
 	@Operation(summary = "删除用户",
-			description = "根据用户ID删除用户，成功返回操作成功，用户不存在则返回 10002（用户不存在）")
+			description = "根据用户ID删除用户，成功返回操作成功，用户不存在则返回 10002")
 	@DeleteMapping("/delete/{id}")
 	public Result<Void> delete(@PathVariable("id")
 	                           @Parameter(
@@ -84,6 +85,20 @@ public class UserController {
 		log.info("【用户模块】更新用户信息，请求参数：{}", userUpdateDTO.getUserId());
 
 		userService.updateUser(userUpdateDTO);
+
+		return Result.success("更新成功");
+	}
+
+	@Operation(summary = "修改用户密码",
+			description = "验证旧密码后更新当前登录用户密码，成功返回操作成功，" +
+					"用户不存在返回 10002，密码错误返回 10006，新旧密码相同返回 10003")
+	@PatchMapping("/password")
+	public Result<Void> updatePassword(@RequestBody @Valid UpdatePasswordDTO updatePasswordDTO,
+	                                   @Parameter(hidden = true) @RequestHeader("X-UserId") Long userId) {
+
+		log.info("【用户模块】更新用户密码，请求参数：{}", updatePasswordDTO);
+
+		userService.updatePassword(updatePasswordDTO, userId);
 
 		return Result.success("更新成功");
 	}

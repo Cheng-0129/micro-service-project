@@ -8,6 +8,7 @@ import com.spring.boot.commoncore.util.ExceptionUtil;
 import com.spring.boot.commoncore.vo.PageVO;
 import com.spring.boot.orderservice.dto.OrderCreateDTO;
 import com.spring.boot.orderservice.dto.OrderQueryDTO;
+import com.spring.boot.orderservice.mq.OrderMessageProducer;
 import com.spring.boot.orderservice.service.OrderService;
 import com.spring.boot.orderservice.vo.OrderAddBackVO;
 import com.spring.boot.orderservice.vo.OrderCreateVO;
@@ -38,6 +39,9 @@ public class OrderController {
 	@Resource
 	private OrderService orderService;
 
+	@Resource
+	private OrderMessageProducer orderMessageProducer;
+
 	@Operation(summary = "创建订单",
 			description = "传入用户ID、商品ID、数量，生成订单号并调用库存模块扣减库存。" +
 					"生成订单号失败/插入失败/更新失败返回 30001，远程调用失败返回 1002。触发熔断/限流返回 30006/30007")
@@ -51,19 +55,14 @@ public class OrderController {
 	public Result<OrderCreateVO> createOrder(@RequestBody @Valid OrderCreateDTO order,
 	                                         @RequestHeader(value = FeignHeaders.SOURCE, required = false) String source) {
 
-		try {
 			log.info("【订单模块】创建订单，请求参数：{}", order);
 			OrderCreateVO vo = orderService.createOrder(order, source);
+
+			orderMessageProducer.sendOrderCreateMessage(vo.getProductId());
+			log.info("【订单模块】事务提交后，订单创建消息已发送至MQ，订单号：{}", vo.getOrderNo());
+
 			log.info("【订单模块】订单创建成功，订单号：{}", vo.getOrderNo());
 			return Result.success(vo, "创建订单成功");
-		} catch (RuntimeException e) {
-			Throwable cause = ExceptionUtil.unwind(e);
-			if (cause instanceof BusinessException bizEx) {
-				log.warn("【订单模块】业务异常：{}", bizEx.getMessage());
-				return Result.fail(bizEx.getCode(), bizEx.getMessage());
-			}
-			throw e;
-		}
 	}
 
 	@Operation(summary = "查询订单",

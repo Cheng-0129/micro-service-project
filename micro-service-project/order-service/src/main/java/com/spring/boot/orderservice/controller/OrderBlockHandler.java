@@ -1,5 +1,7 @@
 package com.spring.boot.orderservice.controller;
 
+import com.spring.boot.commoncore.exception.BusinessException;
+import com.spring.boot.commoncore.util.ExceptionUtil;
 import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.alibaba.csp.sentinel.slots.block.degrade.DegradeException;
 import com.spring.boot.commoncore.result.Result;
@@ -30,7 +32,12 @@ public final class OrderBlockHandler {
 	}
 
 	public static Result<OrderCreateVO> handleCreateOrderFallback(OrderCreateDTO order, Throwable t) {
-		log.error("【订单服务】创建订单业务异常", t);
+		Throwable cause = ExceptionUtil.unwind(t);
+		if (cause instanceof BusinessException bizEx) {
+			log.error("【订单服务】创建订单业务异常，错误码：{}，错误信息：{}", bizEx.getCode(), bizEx.getMessage());
+			return Result.fail(bizEx.getCode(), bizEx.getMessage());
+		}
+		log.error("【订单服务】创建订单系统异常", t);
 		return Result.fail(FAILED);
 	}
 
@@ -45,7 +52,12 @@ public final class OrderBlockHandler {
 	}
 
 	public static Result<OrderAddBackVO> handleCancelOrderFallback(Long orderNo, Throwable t) {
-		log.error("【订单服务】取消订单业务异常", t);
+		Throwable cause = ExceptionUtil.unwind(t);
+		if (cause instanceof BusinessException bizEx) {
+			log.warn("业务异常，code={}, msg={}", bizEx.getCode(), bizEx.getMessage());
+			return Result.fail(bizEx.getCode(), bizEx.getMessage());
+		}
+		log.error("【订单服务】取消订单系统异常，订单号：{}", orderNo, t);
 		return Result.fail(FAILED);
 	}
 }
