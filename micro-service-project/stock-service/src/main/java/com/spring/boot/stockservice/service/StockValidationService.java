@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import static com.spring.boot.commoncore.result.ResultCode.*;
 
@@ -122,6 +123,7 @@ public class StockValidationService {
 		log.info("【校验层】库存删除成功");
 	}
 
+	@Transactional(rollbackFor = Exception.class)
 	public StockDeductVO deductStock(Long productId, Integer num) {
 
 		log.debug("【校验层】开始扣除库存，productId={}, num={}", productId, num);
@@ -165,6 +167,7 @@ public class StockValidationService {
 		return pageVO;
 	}
 
+	@Transactional(rollbackFor = Exception.class)
 	public StockAddBackVO addBackStock(Long productId, Integer num) {
 
 		log.debug("【校验层】开始回滚库存，productId={}, num={}", productId, num);

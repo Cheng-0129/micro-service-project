@@ -28,6 +28,10 @@ public class OrderMessageProducer {
 	 * 异步发送订单创建消息
 	 */
 	public void sendOrderCreateMessage(Long productId) {
+		if (rocketMQTemplate == null) {
+			log.warn("【MQ】RocketMQ未启用，跳过发送订单创建消息: productId={}", productId);
+			return;
+		}
 		String message = String.format("{\"productId\":%d,\"type\":\"create\"}", productId);
 		String destination = TOPIC + ":" + TAG_CREATE;
 
@@ -47,6 +51,10 @@ public class OrderMessageProducer {
 	 * 异步发送订单取消消息
 	 */
 	public void sendOrderCancelMessage(Long productId) {
+		if (rocketMQTemplate == null) {
+			log.warn("【MQ】RocketMQ未启用，跳过发送订单取消消息: productId={}", productId);
+			return;
+		}
 		String message = String.format("{\"productId\":%d,\"type\":\"cancel\"}", productId);
 		String destination = TOPIC + ":" + TAG_CANCEL;
 

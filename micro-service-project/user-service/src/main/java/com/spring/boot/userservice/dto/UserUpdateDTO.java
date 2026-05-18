@@ -28,12 +28,6 @@ public class UserUpdateDTO {
 	@Size(min = 2, max = 10, message = "用户名的长度为2-10")
 	private String name;
 
-	@Schema(description = "密码",
-			example = "11111111",
-			requiredMode = Schema.RequiredMode.AUTO)
-	@Size(min = 6, max = 16, message = "密码的长度为6-16")
-	private String password;
-
 	@Schema(description = "年龄",
 			example = "20",
 			requiredMode = Schema.RequiredMode.NOT_REQUIRED)

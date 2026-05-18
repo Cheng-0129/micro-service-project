@@ -70,7 +70,9 @@ seata:
       db-type: postgresql
 
 rocketmq:
-  name-server: ${ROCKETMQ_ADDR:localhost:9876}
+  name-server: ${ROCKETMQ_NAME_SERVER:127.0.0.1:9876}
   producer:
     group: order-producer-group
     send-message-timeout: 3000
+    retry-times-when-send-failed: 2
+    retry-times-when-send-async-failed: 2
