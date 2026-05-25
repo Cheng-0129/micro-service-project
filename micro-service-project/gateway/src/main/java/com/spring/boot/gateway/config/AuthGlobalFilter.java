@@ -49,6 +49,7 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
 			"/user-service/user/login",
 			"/user-service/user/register",
 			"/user-service/user/logout",
+			"/user-service/user/refresh",
 			"/doc.html",
 			"/webjars/**",
 			"/favicon.ico",
@@ -75,6 +76,7 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
 
 		// 3. 鉴权：OPTIONS 和 白名单放行，其余检查 token
 		if ("OPTIONS".equalsIgnoreCase(method) || isWhiteListed(path)) {
+			log.debug("【网关】白名单路径放行: {}", path);
 			return chain.filter(exchange);
 		}
 
@@ -93,7 +95,7 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
 			log.warn("【网关】token在黑名单中，路径：{}，IP：{}", path, ip);
 			return writeResponse(exchange, Result.fail(ResultCode.GATEWAY_TOKEN_BLACKLISTED));
 		} catch (Exception e) {
-			log.warn("【网关】token无效或过期，路径：{}，IP：{}", path, ip);
+			log.warn("【网关】token无效或过期，路径={}，IP={}，原因={}", path, ip, e.getMessage());
 			return writeResponse(exchange, Result.fail(ResultCode.GATEWAY_TOKEN_EXPIRED));
 		}
 

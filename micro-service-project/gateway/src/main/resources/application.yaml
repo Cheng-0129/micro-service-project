@@ -54,6 +54,12 @@ spring:
             group-id: SENTINEL_GROUP
             data-type: json
             rule-type: gw-flow       # 规则类型：网关流控
+    data:
+      redis:
+        host: ${REDIS_HOST:localhost}
+        port: ${REDIS_PORT:6379}
+        database: 0
+        timeout: 3000ms
 
 knife4j:
   gateway:

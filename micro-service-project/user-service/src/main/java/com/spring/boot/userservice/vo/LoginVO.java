@@ -17,6 +17,8 @@ public class LoginVO {
 	private Long userId;
 	@Schema(description = "用户名", example = "张三")
 	private String name;
-	@Schema(description = "JWT令牌", example = "eyJhbGciOiJIUzI1NiJ9...")
-	private String token;
+	@Schema(description = "JWT访问令牌", example = "eyJhbGciOiJIUzI1NiJ9...")
+	private String accessToken;
+	@Schema(description = "JWT刷新令牌", example = "eyJhbGciOiJIUzI1NiJ9...")
+	private String refreshToken;
 }

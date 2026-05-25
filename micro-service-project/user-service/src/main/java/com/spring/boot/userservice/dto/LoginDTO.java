@@ -16,14 +16,14 @@ import lombok.Data;
 public class LoginDTO {
 
 	@Schema(description = "用户名",
-			example = "测试员",
+			example = "admin",
 			requiredMode = Schema.RequiredMode.REQUIRED)
 	@NotBlank(message = "用户名不能为空")
 	@Size(min = 2, max = 10, message = "用户名的长度为2-10")
 	private String username;
 
 	@Schema(description = "密码",
-			example = "1234567890",
+			example = "123456",
 			requiredMode = Schema.RequiredMode.REQUIRED)
 	@NotBlank(message = "密码不能为空")
 	@Size(min = 6, max = 16, message = "密码的长度为6-16")

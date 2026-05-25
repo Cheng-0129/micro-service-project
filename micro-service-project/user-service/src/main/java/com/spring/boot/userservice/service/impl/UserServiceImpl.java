@@ -152,7 +152,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
 		if (updatePasswordDTO.getOldPassword().equals(updatePasswordDTO.getNewPassword())) {
 			log.warn("【用户模块】更新用户密码失败，新密码不能与旧密码一致，用户ID：{}，请求参数：{}", userId, updatePasswordDTO);
-			throw BusinessException.of(DATA_NO_CHANGE, "新密码不能与旧密码相同");
+			throw BusinessException.of(USER_PASSWORD_SAME);
 		}
 
 		User user = new User();

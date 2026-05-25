@@ -25,6 +25,12 @@ spring:
     url: jdbc:postgresql://127.0.0.1:5432/micro_service_project
     username: postgres
     password: ${DB_PASSWORD:root}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      database: 0
+      timeout: 3000ms
   mvc:
     throw-exception-if-no-handler-found: true
     format:

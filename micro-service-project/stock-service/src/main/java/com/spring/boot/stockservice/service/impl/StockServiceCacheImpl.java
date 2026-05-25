@@ -3,6 +3,7 @@ package com.spring.boot.stockservice.service.impl;
 import com.spring.boot.commoncore.exception.BusinessException;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.spring.boot.commoncore.result.ResultCode;
 import com.spring.boot.stockservice.dto.StockQueryDTO;
 import com.spring.boot.stockservice.entity.Stock;
 import com.spring.boot.stockservice.service.StockService;
@@ -144,7 +145,7 @@ public class StockServiceCacheImpl implements StockService {
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 			log.error("【缓存层】线程中断，productId={}", productId, e);
-			throw new BusinessException("请求超时，请重试");
+			throw BusinessException.of(ResultCode.STOCK_SERVICE_DEGRADE);
 		}
 	}
 
