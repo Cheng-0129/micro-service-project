@@ -2,10 +2,9 @@ server:
   port: 8081
 
 spring:
-  profiles:
-    active: dev
-  application:
-    name: user-service
+  import:
+    - optional:nacos:user-service.yaml
+    - optional:nacos:common-config.yaml?group=DEFAULT_GROUP
   cloud:
     sentinel:
       eager: true

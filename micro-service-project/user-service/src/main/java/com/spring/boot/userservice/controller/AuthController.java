@@ -15,10 +15,7 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  *
@@ -30,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Validated
 @RestController
 @RequestMapping("/user")
-@Tag(name = "用户认证", description = "用户的登录、注册接口")
+@Tag(name = "用户认证", description = "用户的登录、注册、登出接口")
 public class AuthController {
 
 	@Resource
@@ -64,6 +61,18 @@ public class AuthController {
 		userService.addUser(dto);
 		log.info("【用户模块】用户注册成功，用户名：{}", dto.getName());
 		return Result.success("注册成功");
+	}
+
+	@Operation(summary = "用户登出",
+			description = "将当前Token加入黑名单，使其立即失效")
+	@PostMapping("/logout")
+	public Result<Void> logout(@RequestHeader("Authorization") String token) {
+		log.info("【用户模块】用户登出");
+
+		jwtUtil.blacklistToken(token);
+
+		log.info("【用户模块】用户登出成功，Token已加入黑名单");
+		return Result.success("登出成功");
 	}
 
 }

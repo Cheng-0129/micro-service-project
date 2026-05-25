@@ -110,19 +110,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 			throw BusinessException.of(USER_NOT_EXIST);
 		}
 
-		boolean hasChange = false;
+		boolean hasChange = hasFieldChanged(userUpdateDTO.getName(), oldUser.getName()) ||
+				hasFieldChanged(userUpdateDTO.getAge(), oldUser.getAge()) ||
+				hasFieldChanged(userUpdateDTO.getEmail(), oldUser.getEmail());
 
-		if (userUpdateDTO.getName() != null && !Objects.equals(userUpdateDTO.getName(), oldUser.getName())) {
-			hasChange = true;
-		}
-
-		if (userUpdateDTO.getAge() != null && !Objects.equals(userUpdateDTO.getAge(), oldUser.getAge())) {
-			hasChange = true;
-		}
-
-		if (userUpdateDTO.getEmail() != null && !Objects.equals(userUpdateDTO.getEmail(), oldUser.getEmail())) {
-			hasChange = true;
-		}
 		if (!hasChange) {
 			log.warn("【用户模块】更新用户信息：本次提交数据与数据库一致，未产生数据变更，用户ID：{}，请求参数：{}", userUpdateDTO.getUserId(), userUpdateDTO);
 			throw BusinessException.of(DATA_NO_CHANGE);
@@ -143,7 +134,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
 		User existingUser = userMapper.selectOne(
 						new LambdaQueryWrapper<User>()
-								.select(User::getPassword)
+								.select(User::getPassword, User::getId)
 								.eq(User::getUserId, userId));
 
 		// 2. 判空
@@ -165,7 +156,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		}
 
 		User user = new User();
-		user.setUserId(userId);
+		user.setId(existingUser.getId());
 		user.setPassword(passwordEncoder.encode(updatePasswordDTO.getNewPassword()));
 		user.setUpdateTime(Timestamp.valueOf(LocalDateTime.now()));
 
@@ -193,7 +184,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
 		if (user == null) {
 			log.warn("【用户模块】用户信息查询失败，用户不存在，请求参数：{}", id);
-			throw BusinessException.of(USER_NOT_EXIST, "用户[" + id + "]不存在");
+			throw BusinessException.of(USER_NOT_EXIST, "用户[ " + id + " ]不存在");
 		}
 
 		UserVO userVO = userConvertMapper.toUserVO(user);
@@ -240,4 +231,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		return user;
 	}
 
+	// 工具方法
+	private boolean hasFieldChanged(Object newValue, Object oldValue) {
+		return newValue != null && !Objects.equals(newValue, oldValue);
+	}
 }

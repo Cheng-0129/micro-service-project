@@ -2,15 +2,11 @@ server:
   port: 8088
 
 spring:
-  profiles:
-    active: dev
-  application:
-    name: gateway
+  config:
+    import:
+      - optional:nacos:gateway.yaml
+      - optional:nacos:common-config.yaml?group=DEFAULT_GROUP
   cloud:
-    nacos:
-      discovery:
-        server-addr: ${NACOS_ADDR:127.0.0.1:8848}
-        ip: 127.0.0.1          # ← 加这行，注册到 Nacos 的 IP 改成 localhost
     gateway:
       discovery:
         locator:

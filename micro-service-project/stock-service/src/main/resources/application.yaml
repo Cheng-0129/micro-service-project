@@ -2,10 +2,9 @@ server:
   port: 8082
 
 spring:
-  profiles:
-    active: dev
-  application:
-    name: stock-service
+  import:
+    - optional:nacos:stock-service.yaml
+    - optional:nacos:common-config.yaml?group=DEFAULT_GROUP
   cloud:
     sentinel:
       eager: true

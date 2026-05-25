@@ -45,7 +45,7 @@ public class StockValidationService {
 
 		Stock created = stockService.addStock(stock);
 		if (created == null) {
-			log.error("【校验层】数据库新增失败，productId={}", created);
+			log.error("【校验层】数据库新增失败");
 			throw BusinessException.of(STOCK_ADD_FAILED);
 		}
 
@@ -61,7 +61,7 @@ public class StockValidationService {
 
 		if (stock == null) {
 			log.warn("【校验层】库存不存在，productId={}", productId);
-			throw BusinessException.of(STOCK_NOT_EXIST);
+			throw BusinessException.of(STOCK_NOT_EXIST, "库存[ " + productId + " ]不存在" );
 		}
 
 		StockVO stockVO = stockConvertMapper.toStockVO(stock);

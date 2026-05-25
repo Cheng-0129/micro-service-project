@@ -44,7 +44,7 @@ public class StockServiceDBImpl extends ServiceImpl<StockMapper, Stock> implemen
 		boolean success = this.save(stock);
 
 		if (success) {
-			log.debug("【数据层】数据库新增成功，id={}, productId={}", stock.getId(), productId);
+			log.debug("【数据层】数据库新增成功，productId={}", productId);
 			return stock;
 		} else {
 			log.error("【数据层】数据库新增失败");

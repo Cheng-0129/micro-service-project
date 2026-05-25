@@ -41,12 +41,14 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
 	@Autowired
 	private JwtUtil jwtUtil;
 
+
 	/**
 	 * 白名单路径，不需要鉴权
 	 */
 	private static final List<String> WHITE_LIST = List.of(
 			"/user-service/user/login",
 			"/user-service/user/register",
+			"/user-service/user/logout",
 			"/doc.html",
 			"/webjars/**",
 			"/favicon.ico",
@@ -87,6 +89,9 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
 		Long userId;
 		try {
 			userId = jwtUtil.getUserIdFromToken(token);
+		} catch (IllegalStateException e) {
+			log.warn("【网关】token在黑名单中，路径：{}，IP：{}", path, ip);
+			return writeResponse(exchange, Result.fail(ResultCode.GATEWAY_TOKEN_BLACKLISTED));
 		} catch (Exception e) {
 			log.warn("【网关】token无效或过期，路径：{}，IP：{}", path, ip);
 			return writeResponse(exchange, Result.fail(ResultCode.GATEWAY_TOKEN_EXPIRED));

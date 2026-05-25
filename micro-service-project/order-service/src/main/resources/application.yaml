@@ -2,10 +2,9 @@ server:
   port: 8083
 
 spring:
-  profiles:
-    active: dev
-  application:
-    name: order-service
+  import:
+    - optional:nacos:order-service.yaml
+    - optional:nacos:common-config.yaml?group=DEFAULT_GROUP
   cloud:
     sentinel:
       eager: true

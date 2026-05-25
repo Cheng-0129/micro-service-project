@@ -1,9 +1,7 @@
 logging:
   level:
     root: warn
-    com.spring.boot.userservice: info
-    org.mybatis: warn
-    org.springframework.jdbc: warn
+    com.spring.boot: info
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{50} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"
