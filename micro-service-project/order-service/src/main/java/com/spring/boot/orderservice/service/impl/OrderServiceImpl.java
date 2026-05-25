@@ -94,7 +94,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 		int insertCount = orderMapper.insert(order);
 		if (insertCount <= 0) {
 			log.error("【订单模块】订单插入失败，订单ID：{}", order.getId());
-			throw BusinessException.of(ORDER_ADD_FAILED, "订单插入数据库失败");
+			throw BusinessException.of(ORDER_ADD_FAILED);
 		}
 		log.info("【订单模块】预订单创建成功，订单ID：{}，订单状态：PENDING", order.getId());
 
@@ -102,9 +102,15 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 				orderNo, dto.getProductId(), dto.getNum());
 		Result<StockDeductFeignVO> result = stockClient.deductStock(dto.getProductId(), dto.getNum());
 
-		if (result == null || result.isFail() || result.getData() == null) {
-			log.warn("【订单模块】扣减库存失败，订单号：{}", orderNo);
-			throw BusinessException.of(FEIGN_ERROR, "扣库存失败，订单回滚");
+		if (result == null || result.getData() == null) {
+			log.warn("【订单模块】扣减库存失败，返回结果为 null，订单号：{}", orderNo);
+			throw BusinessException.of(FEIGN_ERROR);
+		}
+
+		if (result.isFail()) {
+			log.warn("【订单模块】扣减库存失败，下游返回 code={}, message={}, 订单号：{}",
+					result.getCode(), result.getMsg(), orderNo);
+			throw BusinessException.of(result.getCode(), result.getMsg());
 		}
 
 		StockDeductFeignVO deductVO = result.getData();
@@ -119,7 +125,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 		int updateCount = orderMapper.updateById(order);
 		if (updateCount <= 0) {
 			log.error("【订单模块】订单状态更新失败，订单ID：{}", order.getId());
-			throw BusinessException.of(ORDER_ADD_FAILED, "订单更新数据库失败");
+			throw BusinessException.of(ORDER_ADD_FAILED);
 		}
 		log.info("【订单模块】订单更新成功，订单ID：{}，金额：{}，状态：CREATED", order.getId(), amount);
 
@@ -198,8 +204,15 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
 				try {
 					Result<StockAddBackFeignVO> result = stockClient.addBackStock(order.getProductId(), order.getNum());
-					if (result == null || result.isFail()) {
-						throw BusinessException.of(ORDER_ROLLBACK_FAILED, "库存回滚失败");
+					if (result == null || result.getData() == null) {
+						log.error("【订单模块】库存回滚返回结果为 null，订单号：{}", orderNo);
+						throw BusinessException.of(ORDER_ROLLBACK_FAILED);
+					}
+
+					if (result.isFail()) {
+						log.error("【订单模块】库存回滚失败，下游返回 code={}, message={}, 订单号：{}",
+								result.getCode(), result.getMsg(), orderNo);
+						throw BusinessException.of(result.getCode(), result.getMsg());
 					}
 
 					order.setStatus(OrderStatus.CANCELLED.getCode());
@@ -215,6 +228,8 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 					vo.setUserId(order.getUserId());
 					return vo;
 
+				} catch (BusinessException e) {
+					throw e;
 				} catch (Exception e) {
 					log.error("【订单模块】库存回滚失败，需人工处理！订单号={}, productId={}, num={}",
 							orderNo, order.getProductId(), order.getNum(), e);
@@ -227,10 +242,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
 			case CANCELLED:
 				log.warn("【订单模块】订单先前已取消，订单号：{}", orderNo);
-				throw BusinessException.of(ORDER_WAS_CANCELED, "订单已取消，无法重复操作");
+				throw BusinessException.of(ORDER_WAS_CANCELED);
 		}
 
-		throw BusinessException.of(ORDER_STATUS_ERROR, "订单状态异常，无法取消");
+		throw BusinessException.of(ORDER_STATUS_ERROR);
 	}
 
 	@Override
@@ -259,14 +274,20 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 	private UserFeignVO getUserById(Long userId) {
 		try {
 			Result<UserFeignVO> result = userClient.getById(userId);
-			if (result == null || result.isFail()) {
-				log.warn("【订单模块】用户不存在，userId={}", userId);
-				throw BusinessException.of(ORDER_ADD_FAILED, "用户不存在");
+			if (result == null || result.getData() == null) {
+				log.warn("【订单模块】用户查询返回结果为 null，userId={}", userId);
+				throw BusinessException.of(FEIGN_ERROR);
+			}
+
+			if (result.isFail()) {
+				log.warn("【订单模块】用户查询失败，下游返回 code={}, message={}, userId={}",
+						result.getCode(), result.getMsg(), userId);
+				throw BusinessException.of(result.getCode(), result.getMsg());
 			}
 			return result.getData();
 		} catch (FeignException e) {
 			log.error("【订单模块】用户模块不可用，userId={}", userId);
-			throw BusinessException.of(USER_SERVICE_DEGRADE, "用户服务繁忙");
+			throw BusinessException.of(USER_SERVICE_DEGRADE);
 		}
 	}
 }

@@ -17,4 +17,5 @@ knife4j:
 
 jwt:
   secret: ${JWT_SECRET}
-  expire: ${JWT_EXPIRE:86400000}
+  access-expire: ${JWT_ACCESS_EXPIRE:900000}        # ✅ 15分钟（900000毫秒）
+  refresh-expire: ${JWT_REFRESH_EXPIRE:604800000}   # ✅ 7天（604800000毫秒）

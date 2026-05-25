@@ -155,10 +155,17 @@ public class UserController {
 
 		Result<OrderFeignVO> result = orderClient.createOrder(orderCreateFeignDTO, FeignHeaders.SOURCE_USER_SERVICE);
 
-		if (result == null || result.isFail() || result.getData() == null) {
-			log.warn("【用户模块】下单失败，userId={}, productId={}, num={}",
+		if (result == null || result.getData() == null) {
+			log.warn("【用户模块】下单失败，返回结果为 null，userId={}, productId={}, num={}",
 					orderCreateFeignDTO.getUserId(), orderCreateFeignDTO.getProductId(), orderCreateFeignDTO.getNum());
-			throw BusinessException.of(FEIGN_ERROR, "下单失败，请稍后重试");
+			throw BusinessException.of(FEIGN_ERROR);
+		}
+
+		if (result.isFail()) {
+			log.warn("【用户模块】下单失败，下游返回 code={}, message={}, userId={}, productId={}, num={}",
+					result.getCode(), result.getMsg(),
+					orderCreateFeignDTO.getUserId(), orderCreateFeignDTO.getProductId(), orderCreateFeignDTO.getNum());
+			throw BusinessException.of(result.getCode(), result.getMsg());
 		}
 
 		OrderFeignVO orderFeignVO = result.getData();

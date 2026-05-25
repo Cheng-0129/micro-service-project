@@ -48,7 +48,7 @@ public class GlobalErrorWebExceptionHandler implements ErrorWebExceptionHandler 
 			result = Result.fail(bizEx.getCode(), bizEx.getMessage());
 			exchange.getResponse().setStatusCode(HttpStatus.OK);
 		} else {
-			log.error("【网关】系统异常", ex);
+			log.error("【网关】系统异常，原因={}", ex.getMessage(), ex);
 			result = Result.fail(ResultCode.FAILED);
 			exchange.getResponse().setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
 		}

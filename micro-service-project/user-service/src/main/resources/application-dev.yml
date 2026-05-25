@@ -10,4 +10,5 @@ knife4j:
 
 jwt:
   secret: dev-local-jwt-secret-key-2026!!!
-  expire: 86400000
+  access-expire: 900000    # ✅ 15分钟（900000毫秒）
+  refresh-expire: 604800000  # ✅ 7天（604800000毫秒）
