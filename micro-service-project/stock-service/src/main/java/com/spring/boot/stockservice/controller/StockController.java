@@ -42,11 +42,8 @@ public class StockController {
 	public Result<Void> addStock(@RequestBody @Valid StockCreateDTO stock) {
 
 		log.info("【库存模块】新增库存信息，请求参数：stock={}", stock);
-
 		stockValidationService.addStock(stock);
-
 		log.info("【库存模块】新增库存信息成功，stock={}", stock);
-
 		return Result.success("库存新增成功");
 	}
 
@@ -61,11 +58,8 @@ public class StockController {
 	                                           Long productId) {
 
 		log.info("【库存模块】查询库存信息，请求参数：productId={}", productId);
-
 		StockVO stockVO = stockValidationService.getStockByProductId(productId);
-
 		log.info("【库存模块】查询库存信息成功，productId={}", productId);
-
 		return Result.success(stockVO);
 	}
 
@@ -81,11 +75,8 @@ public class StockController {
 	                                @RequestBody @Valid StockUpdateDTO stock) {
 
 		log.info("【库存模块】更新库存信息，请求参数：productId={}, stock={}", productId, stock);
-
 		stockValidationService.updateStockByProductId(productId, stock);
-
 		log.info("【库存模块】更新库存信息成功，productId={}", productId);
-
 		return Result.success("库存更新成功");
 	}
 
@@ -100,11 +91,8 @@ public class StockController {
 	                                Long productId) {
 
 		log.info("【库存模块】删除库存信息，请求参数：productId={}", productId);
-
 		stockValidationService.deleteStockByProductId(productId);
-
 		log.info("【库存模块】删除库存信息成功，productId={}", productId);
-
 		return Result.success("库存删除成功");
 	}
 

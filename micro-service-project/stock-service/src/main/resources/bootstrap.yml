@@ -1,12 +1,22 @@
+server:
+  port: 8082
+
 spring:
   application:
     name: stock-service
+  profiles:
+    active: dev
   cloud:
     nacos:
+      # 配置中心
+      config:
+        server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+        file-extension: yaml
+        shared-configs:
+          - data-id: common-config.yaml
+            group: DEFAULT_GROUP
+            refresh: true
+      # 服务发现
       discovery:
         server-addr: ${NACOS_ADDR:127.0.0.1:8848}
         ip: 127.0.0.1
-      config:
-        enabled: ${NACOS_CONFIG_ENABLED:false}
-        server-addr: ${NACOS_ADDR:127.0.0.1:8848}
-        file-extension: yaml

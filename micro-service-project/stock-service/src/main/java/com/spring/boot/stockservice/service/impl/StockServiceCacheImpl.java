@@ -1,5 +1,6 @@
 package com.spring.boot.stockservice.service.impl;
 
+import com.spring.boot.commoncore.exception.BusinessException;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.spring.boot.stockservice.dto.StockQueryDTO;
@@ -54,6 +55,12 @@ public class StockServiceCacheImpl implements StockService {
 	private static final int CACHE_EXPIRE_RANDOM = 300;  // 0-5分钟随机
 	private static final int EMPTY_CACHE_EXPIRE_RANDOM = 60;  // 0-1分钟随机
 
+	// 锁相关参数
+	private static final int LOCK_RETRY_TIMES = 3;        // 锁重试次数
+	private static final int LOCK_TIMEOUT_SECONDS = 10;   // 锁超时时间（秒）
+	private static final int LOCK_RETRY_DELAY_MS = 50;    // 重试间隔（毫秒）
+	private static final long UNLOCK_SUCCESS = 1L;        // 解锁成功
+
 	@Override
 	public Stock addStock(Stock stock) {
 
@@ -93,8 +100,8 @@ public class StockServiceCacheImpl implements StockService {
 
 		try {
 			// 尝试获取锁，最多等待3次
-			for (int i = 0; i < 3; i++) {
-				if (tryLock(lockKey, lockValue, 10)) {
+			for (int i = 0; i < LOCK_RETRY_TIMES; i++) {
+				if (tryLock(lockKey, lockValue, LOCK_TIMEOUT_SECONDS)) {
 					log.debug("【缓存层】获取锁成功，lockKey={}, 第{}次尝试", lockKey, i + 1);
 					try {
 						// 双重检查，可能其他线程已经加载了缓存
@@ -127,7 +134,7 @@ public class StockServiceCacheImpl implements StockService {
 				}
 				log.debug("【缓存层】获取锁失败，第{}次尝试，等待重试", i + 1);
 				// 获取锁失败，短暂等待后重试
-				Thread.sleep(50);
+				Thread.sleep(LOCK_RETRY_DELAY_MS);
 			}
 
 			// 重试失败，直接查数据库（降级方案）
@@ -137,7 +144,7 @@ public class StockServiceCacheImpl implements StockService {
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 			log.error("【缓存层】线程中断，productId={}", productId, e);
-			return null;
+			throw new BusinessException("请求超时，请重试");
 		}
 	}
 
@@ -209,6 +216,7 @@ public class StockServiceCacheImpl implements StockService {
 		return stockAfter;
 	}
 
+	// 工具方法
 	private void setCacheWithRandomExpire(String key, Stock stock) {
 		if (stock != null) {
 			// 正常数据缓存30分钟 + 随机0-5分钟
@@ -241,7 +249,7 @@ public class StockServiceCacheImpl implements StockService {
 		script.setResultType(Long.class);
 
 		Long result = redisTemplate.execute(script, Collections.singletonList(key), value);
-		if (result != null && result == 1) {
+		if (result != null && result == UNLOCK_SUCCESS) {
 			log.debug("【缓存层】释放锁成功，key={}", key);
 		} else {
 			log.warn("【缓存层】释放锁失败，锁可能已过期，key={}", key);

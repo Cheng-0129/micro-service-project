@@ -1,8 +1,7 @@
 logging:
   level:
     root: info
-    com.spring.boot.gateway: debug
-    org.springframework.cloud.gateway: debug
+    com.spring.boot: debug
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{50} - %msg%n"
 

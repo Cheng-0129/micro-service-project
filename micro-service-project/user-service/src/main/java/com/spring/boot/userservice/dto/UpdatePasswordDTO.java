@@ -23,7 +23,7 @@ public class UpdatePasswordDTO {
 	private String oldPassword;
 
 	@Schema(description = "新密码",
-			example = "11111111",
+			example = "22222222",
 			requiredMode = Schema.RequiredMode.REQUIRED)
 	@NotBlank(message = "密码不能为空")
 	@Size(min = 6, max = 16, message = "密码的长度为6-16")

@@ -14,6 +14,10 @@ public enum ResultCode {
 	FAILED(1000, "操作失败"),
 	PARAM_VALID_ERROR(1001, "参数校验失败"),
 	FEIGN_ERROR(1002, "远程服务调用失败"),
+	REPLAY_ATTACK(1003, "请求参数异常"),           // 缺少防重放参数
+	REPLAY_TIMEOUT(1004, "请求已过期"),            // 时间戳超时
+	REPLAY_DUPLICATE(1005, "请勿重复提交"),        // nonce重复
+	REPLAY_TIMESTAMP_ERROR(1006, "时间戳格式错误"),
 
 	// ==================== 用户模块 10000-19999 ====================
 	USER_ADD_FAILED(10001, "用户添加失败"),
@@ -52,7 +56,8 @@ public enum ResultCode {
 	GATEWAY_TOKEN_MISSING(40006, "缺少访问令牌"),
 	GATEWAY_TOKEN_EXPIRED(40007, "登录已过期，请重新登录"),
 	GATEWAY_TOKEN_INVALID(40008, "无效的访问令牌"),
-	GATEWAY_FORBIDDEN(40009, "无访问权限")
+	GATEWAY_FORBIDDEN(40009, "无访问权限"),
+	GATEWAY_TOKEN_BLACKLISTED(40010, "令牌已注销，请重新登录")
 	;
 
 	private final int code;

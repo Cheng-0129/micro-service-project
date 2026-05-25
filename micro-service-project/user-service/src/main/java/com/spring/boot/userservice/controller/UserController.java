@@ -4,7 +4,7 @@ import com.alibaba.csp.sentinel.annotation.SentinelResource;
 import com.spring.boot.commoncore.constant.FeignHeaders;
 import com.spring.boot.commoncore.exception.BusinessException;
 import com.spring.boot.commoncore.result.Result;
-import com.spring.boot.commoncore.util.ExceptionUtil;
+import com.spring.boot.commoncore.annotation.PreventReplay;
 import com.spring.boot.commoncore.vo.PageVO;
 import com.spring.boot.userservice.dto.UpdatePasswordDTO;
 import com.spring.boot.userservice.dto.feign.OrderCreateFeignDTO;
@@ -92,6 +92,7 @@ public class UserController {
 	@Operation(summary = "修改用户密码",
 			description = "验证旧密码后更新当前登录用户密码，成功返回操作成功，" +
 					"用户不存在返回 10002，密码错误返回 10006，新旧密码相同返回 10003")
+	@PreventReplay(timeout = 3000)
 	@PatchMapping("/password")
 	public Result<Void> updatePassword(@RequestBody @Valid UpdatePasswordDTO updatePasswordDTO,
 	                                   @Parameter(hidden = true) @RequestHeader("X-UserId") Long userId) {
@@ -152,26 +153,17 @@ public class UserController {
 				orderCreateFeignDTO.getProductId(),
 				orderCreateFeignDTO.getNum());
 
-		try {
-			Result<OrderFeignVO> result = orderClient.createOrder(orderCreateFeignDTO, FeignHeaders.SOURCE_USER_SERVICE);
+		Result<OrderFeignVO> result = orderClient.createOrder(orderCreateFeignDTO, FeignHeaders.SOURCE_USER_SERVICE);
 
-			if (result == null || result.isFail() || result.getData() == null) {
-				log.warn("【用户模块】下单失败，userId={}, productId={}, num={}",
-						orderCreateFeignDTO.getUserId(), orderCreateFeignDTO.getProductId(), orderCreateFeignDTO.getNum());
-				throw BusinessException.of(FEIGN_ERROR, "下单失败，请稍后重试");
-			}
-
-			OrderFeignVO orderFeignVO = result.getData();
-			log.info("【用户模块】下单成功，订单号：{}", orderFeignVO.getOrderNo());
-
-			return Result.success(orderFeignVO, "下单成功");
-		} catch (RuntimeException e) {
-			Throwable cause = ExceptionUtil.unwind(e);
-			if (cause instanceof BusinessException bizEx) {
-				log.warn("【用户模块】业务异常：{}", bizEx.getMessage());
-				return Result.fail(bizEx.getCode(), bizEx.getMessage());
-			}
-			throw e;
+		if (result == null || result.isFail() || result.getData() == null) {
+			log.warn("【用户模块】下单失败，userId={}, productId={}, num={}",
+					orderCreateFeignDTO.getUserId(), orderCreateFeignDTO.getProductId(), orderCreateFeignDTO.getNum());
+			throw BusinessException.of(FEIGN_ERROR, "下单失败，请稍后重试");
 		}
+
+		OrderFeignVO orderFeignVO = result.getData();
+		log.info("【用户模块】下单成功，订单号：{}", orderFeignVO.getOrderNo());
+
+		return Result.success(orderFeignVO, "下单成功");
 	}
 }

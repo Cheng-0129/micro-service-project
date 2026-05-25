@@ -2,7 +2,7 @@ package com.spring.boot.orderservice.controller;
 
 import com.alibaba.csp.sentinel.annotation.SentinelResource;
 import com.spring.boot.commoncore.constant.FeignHeaders;
-import com.spring.boot.commoncore.exception.BusinessException;
+import com.spring.boot.commoncore.annotation.PreventReplay;
 import com.spring.boot.commoncore.result.Result;
 import com.spring.boot.commoncore.util.ExceptionUtil;
 import com.spring.boot.commoncore.vo.PageVO;
@@ -46,6 +46,7 @@ public class OrderController {
 			description = "传入用户ID、商品ID、数量，生成订单号并调用库存模块扣减库存。" +
 					"生成订单号失败/插入失败/更新失败返回 30001，远程调用失败返回 1002。触发熔断/限流返回 30006/30007")
 	@PostMapping("/create")
+	@PreventReplay
 	@SentinelResource(
 			value = "createOrder",
 			blockHandler = "handleCreateOrderBlock",
