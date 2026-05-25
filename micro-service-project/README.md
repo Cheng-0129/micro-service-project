@@ -21,6 +21,7 @@
 - ⚡ **缓存加速**：Redis 缓存热点库存数据，提升查询性能
 - 📝 **接口文档**：Knife4j 聚合各服务 Swagger 文档，支持在线调试
 - 🔐 **安全认证**：JWT Token 鉴权，网关层统一校验，下游服务透传用户ID
+- 🔄 **防重放攻击**：基于 Nonce + Timestamp 的请求防重放机制，支持网关层自动注入和业务层双重防护
 
 ### 🔄 业务链路
 
@@ -56,28 +57,33 @@
 | **注解增强** | Lombok | 1.18.32 |
 | **接口注解** | Swagger Annotations | 2.2.21 |
 | **JWT** | JJWT | 0.12.3 |
+| **AOP 编程** | Spring AOP | 6.1.2 |
 
 ## 📁 项目结构
 
 ```
 micro-service-project/
-├── common-core/              # 公共核心模块（统一返回、异常处理、工具类）
+├── common-core/              # 公共核心模块（统一返回、异常处理、工具类、防重放注解）
 │   └── src/main/java/com/spring/boot/commoncore/
+│       ├── annotation/       # 注解定义（PreventReplay 防重放注解）
 │       ├── constant/         # 常量定义（FeignHeaders等）
 │       ├── exception/        # 业务异常类
 │       ├── result/           # 统一响应体Result、结果码ResultCode
 │       ├── util/             # 工具类（ExceptionUtil异常解包）
 │       └── vo/               # 通用VO（PageVO分页工具）
 │
-├── common-web/               # 公共 Web 模块（全局异常拦截、序列化、分页配置）
+├── common-web/               # 公共 Web 模块（全局异常拦截、序列化、分页配置、防重放切面）
 │   └── src/main/java/com/spring/boot/commonweb/
+│       ├── aspect/           # AOP切面（ReplayAttackAspect 防重放攻击切面）
 │       ├── component/        # 组件（IdGenerator ID生成器）
 │       ├── config/           # 配置类（Jackson、MyBatis-Plus、IdGenerator）
-│       └── exception/        # 全局异常处理器GlobalExceptionHandler
+│       ├── exception/        # 全局异常处理器GlobalExceptionHandler
+│       ├── interceptor/      # 拦截器（FeignReplayInterceptor Feign防重放拦截器）
+│       └── util/             # 工具类（ReplayAttackPreventor 防重放验证器）
 │
-├── gateway/                  # 网关模块（路由转发、鉴权、限流、文档聚合）
+├── gateway/                  # 网关模块（路由转发、鉴权、限流、文档聚合、防重放过滤）
 │   └── src/main/java/com/spring/boot/gateway/
-│       ├── config/           # 配置类（AuthGlobalFilter鉴权、SentinelConfig限流、GlobalErrorWebExceptionHandler异常处理）
+│       ├── config/           # 配置类（AuthGlobalFilter鉴权、SentinelConfig限流、GlobalErrorWebExceptionHandler异常处理、ReplayAttackFilter防重放过滤）
 │       └── util/             # 工具类（JwtUtil JWT解析）
 │
 ├── user-service/             # 用户服务（端口：8081）
@@ -123,7 +129,7 @@ micro-service-project/
 └── README.md                 # 项目说明文档
 ```
 > **分层说明**：各业务模块采用统一分层架构 `config` / `controller` / `convert` / `dto` / `entity` / `mapper` / `service.impl` / `vo`
-> 
+>
 > **差异说明**：
 > - `user-service`、`order-service` 含 `feign` 包（远程调用其他服务）
 > - `stock-service` 的 `service` 采用 DB + Cache 双实现策略
@@ -134,9 +140,9 @@ micro-service-project/
 
 | 模块 | 说明 | 端口 | 核心技术 |
 |------|------|------|---------|
-| `common-core` | 公共核心模块：<br/>• Result 统一响应体<br/>• ResultCode 业务码枚举<br/>• BusinessException 业务异常<br/>• PageVO 分页工具<br/>• ExceptionUtil 异常解包 | - | - |
-| `common-web` | 公共 Web 模块：<br/>• GlobalExceptionHandler 全局异常拦截<br/>• JacksonConfig JSON 序列化配置<br/>• MyBatisPlusConfig 分页插件<br/>• IdGenerator 分布式ID生成器 | - | MyBatis-Plus、Sentinel |
-| `gateway` | 网关模块：<br/>• 路由转发（StripPrefix=1）<br/>• 全局鉴权（AuthGlobalFilter）<br/>• 全局异常处理（GlobalErrorWebExceptionHandler）<br/>• Sentinel 网关流控（SentinelConfig）<br/>• 跨域配置（Global CORS）<br/>• Knife4j 文档聚合 | 8088 | Spring Cloud Gateway、Sentinel、JWT、Knife4j |
+| `common-core` | 公共核心模块：<br/>• Result 统一响应体<br/>• ResultCode 业务码枚举<br/>• BusinessException 业务异常<br/>• PageVO 分页工具<br/>• ExceptionUtil 异常解包<br/>• PreventReplay 防重放注解 | - | - |
+| `common-web` | 公共 Web 模块：<br/>• GlobalExceptionHandler 全局异常拦截<br/>• JacksonConfig JSON 序列化配置<br/>• MyBatisPlusConfig 分页插件<br/>• IdGenerator 分布式ID生成器<br/>• ReplayAttackAspect 防重放AOP切面<br/>• FeignReplayInterceptor Feign防重放拦截器<br/>• ReplayAttackPreventor 防重放验证器 | - | MyBatis-Plus、Sentinel、Spring AOP |
+| `gateway` | 网关模块：<br/>• 路由转发（StripPrefix=1）<br/>• 全局鉴权（AuthGlobalFilter）<br/>• 全局异常处理（GlobalErrorWebExceptionHandler）<br/>• Sentinel 网关流控（SentinelConfig）<br/>• 跨域配置（Global CORS）<br/>• Knife4j 文档聚合<br/>• ReplayAttackFilter 防重放过滤器（自动注入 Nonce + Timestamp） | 8088 | Spring Cloud Gateway、Sentinel、JWT、Knife4j |
 | `user-service` | 用户服务：<br/>• 用户 CRUD、分页查询<br/>• Feign 调用订单模块下单<br/>• Sentinel 熔断降级<br/>• 登录注册（白名单） | 8081 | OpenFeign、Sentinel、PostgreSQL |
 | `stock-service` | 库存服务：<br/>• 库存 CRUD、分页查询<br/>• 扣减库存、回滚库存<br/>• Redis 缓存热点数据<br/>• RocketMQ 消费订单消息清除缓存<br/>• Sentinel 熔断降级<br/>• Seata 分布式事务参与者 | 8082 | Redis、RocketMQ、Seata、Sentinel、PostgreSQL |
 | `order-service` | 订单服务：<br/>• 创建订单（生成订单号、扣减库存）<br/>• 取消订单（回滚库存）<br/>• 订单 CRUD、分页查询<br/>• Seata 分布式事务发起者<br/>• RocketMQ 发送订单消息<br/>• Sentinel 熔断降级 | 8083 | Seata、RocketMQ、OpenFeign、Sentinel、PostgreSQL |
@@ -278,6 +284,43 @@ mvn spring-boot:run -pl gateway
   - `GATEWAY_TOKEN_MISSING`：缺少 Token
   - `GATEWAY_TOKEN_EXPIRED`：Token 无效或过期
 
+### 🔄 防重放攻击机制
+
+项目实现了双层防重放攻击保护机制：
+
+#### 1. 网关层自动注入
+
+网关通过 `ReplayAttackFilter` 为所有请求自动注入防重放参数：
+
+- **X-Nonce**：唯一请求标识（UUID）
+- **X-Timestamp**：请求时间戳（毫秒）
+
+这两个参数会自动传递给下游所有微服务，用于业务层的防重放验证。
+
+#### 2. 业务层防重放验证
+
+业务服务可通过 `@PreventReplay` 注解启用防重放保护：
+
+```java
+@PreventReplay(timeout = 60000) // 默认超时60秒
+@PostMapping("/order/create")
+public Result<OrderVO> createOrder(@RequestBody @Valid OrderCreateDTO dto) {
+	// 业务逻辑
+}
+```
+
+**工作原理**：
+- `ReplayAttackAspect` 切面拦截标注了 `@PreventReplay` 的方法
+- 从请求头提取 `X-Nonce` 和 `X-Timestamp`
+- 验证时间戳是否在有效期内（默认60秒）
+- 检查 Nonce 是否已被使用（防止重复请求）
+- Feign 调用时通过 `FeignReplayInterceptor` 自动传递防重放参数
+
+**适用场景**：
+- 订单创建、支付等幂等性要求高的接口
+- 资金相关的敏感操作
+- 需要防止恶意重放攻击的关键业务接口
+
 ## 🔗 服务间调用关系
 
 ```mermaid
@@ -418,6 +461,7 @@ Knife4j 自动聚合所有微服务的 Swagger 文档，支持：
 - [x] 完善服务间调用关系说明
 - [x] 接入 Sentinel 流量控制与熔断降级
 - [x] 接入 RocketMQ 异步消息（订单与库存缓存解耦）
+- [x] 实现防重放攻击保护机制（网关层 + 业务层双重防护）
 - [ ] 补充部署说明（Docker / Docker Compose）
 - [ ] 补充单元测试与集成测试
 - [ ] 补充 CI/CD 流水线配置
