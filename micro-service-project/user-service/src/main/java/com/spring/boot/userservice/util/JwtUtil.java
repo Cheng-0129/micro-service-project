@@ -93,9 +93,17 @@ public class JwtUtil {
 			oldRefreshToken = oldRefreshToken.substring(7);
 		}
 
-		// 1. 先从 JWT 解析 userId（不依赖 Redis）
-		Claims claims = Jwts.parser().verifyWith(key).build()
-				.parseSignedClaims(oldRefreshToken).getPayload();
+		// 1. 解析 JWT
+		Claims claims;
+		try {
+			claims = Jwts.parser().verifyWith(key).build()
+					.parseSignedClaims(oldRefreshToken).getPayload();
+		} catch (Exception e) {
+			log.warn("【JWT】Refresh Token 解析失败，原因={}", e.getMessage());
+			throw BusinessException.of(GATEWAY_TOKEN_INVALID);
+		}
+
+		// 2. 校验类型
 		if (!"refresh".equals(claims.get("type"))) {
 			log.warn("【JWT】刷新接口收到非 Refresh Token，type={}，userId={}",
 					claims.get("type"), claims.getSubject());
@@ -103,7 +111,7 @@ public class JwtUtil {
 		}
 		Long userId = Long.valueOf(claims.getSubject());
 
-		// 2. 验证 Refresh Token 是否在 Redis 中
+		// 3. 验证 Refresh Token 是否在 Redis 中
 		String cachedUserId = redisTemplate.opsForValue().get("refresh_token:" + oldRefreshToken);
 		if (cachedUserId == null) {
 			// ✅ 检测到重复使用，拉黑该用户所有 Token
@@ -112,12 +120,11 @@ public class JwtUtil {
 			throw BusinessException.of(GATEWAY_TOKEN_EXPIRED);
 		}
 
-
-		// 3. 删除旧的 Refresh Token
+		// 4. 删除旧的 Refresh Token
 		redisTemplate.delete("refresh_token:" + oldRefreshToken);
 		redisTemplate.opsForSet().remove("user_refresh_tokens:" + userId, oldRefreshToken);
 
-		// 4. 生成新的 Token Pair
+		// 5. 生成新的 Token Pair
 		String newAccessToken = generateAccessToken(userId);
 		String newRefreshToken = generateRefreshToken(userId);
 
@@ -189,7 +196,7 @@ public class JwtUtil {
 		} catch (Exception e) {
 			log.warn("【JWT】Token 解析失败，原因={}，token前20位={}",
 					e.getMessage(), token.substring(0, Math.min(20, token.length())));
-			throw e;
+			throw BusinessException.of(GATEWAY_TOKEN_INVALID);
 		}
 	}
 
