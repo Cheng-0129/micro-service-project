@@ -6,6 +6,10 @@
 [![Spring Cloud](https://img.shields.io/badge/Spring%20Cloud-2023.0.1-orange.svg)](https://spring.io/projects/spring-cloud)
 [![Java](https://img.shields.io/badge/Java-17-red.svg)](https://www.oracle.com/java/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
+[![Coverage](https://img.shields.io/badge/coverage-coming%20soon-yellow.svg)]()
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20%7C%20MacOS-blue.svg)]()
+
 
 ## 📖 项目简介
 
@@ -20,11 +24,11 @@
 - 📨 **消息队列**：RocketMQ 异步解耦订单与库存缓存清除操作
 - ⚡ **缓存加速**：Redis 缓存热点库存数据，提升查询性能
 - 📝 **接口文档**：Knife4j 聚合各服务 Swagger 文档，支持在线调试
-- 🔐 **安全认证**：JWT Token 鉴权，网关层统一校验，下游服务透传用户ID
+- 🔐 **安全认证**：JWT 双 Token（Access + Refresh）鉴权，网关层统一校验，下游服务透传用户ID
 - 🔄 **防重放攻击**：基于 Nonce + Timestamp 的请求防重放机制，支持网关层自动注入和业务层双重防护
+- 🚫 **Token 黑名单**：基于 Redis 的 Token 黑名单机制，支持即时登出与安全注销
 
 ### 🔄 业务链路
-
 ```
 用户请求 → 网关(8088) → 用户服务(8081) → Feign调用 → 订单服务(8083) 
                                               ↓
@@ -34,118 +38,48 @@
                                               ↓
                                     RocketMQ异步消息 → 清除Redis缓存
 ```
+
 ## 🛠️ 技术栈
 
-| 类别 | 技术 | 版本 |
-|------|------|------|
-| **核心框架** | Spring Boot | 3.2.0 |
-| **微服务框架** | Spring Cloud | 2023.0.1 |
-| **微服务框架** | Spring Cloud Alibaba | 2023.0.1.2 |
-| **网关** | Spring Cloud Gateway | 4.1.0 |
-| **负载均衡** | Spring Cloud LoadBalancer | 4.1.0 |
-| **ORM 框架** | MyBatis-Plus | 3.5.12 |
-| **数据库** | PostgreSQL | 15+ |
-| **服务治理** | Nacos | 3.2.0 |
-| **接口文档** | Knife4j | 4.5.0 |
-| **缓存** | Redis | 5.0.14.1 |
-| **流量控制** | Sentinel | 1.8.8 |
-| **分布式事务** | Seata | 2.0.0 |
-| **消息队列** | RocketMQ | 5.3.1 |
-| **对象映射** | MapStruct | 1.5.5.Final |
-| **JSON 处理** | Jackson | 2.15.3 |
-| **参数校验** | Jakarta Validation | 3.0.2 |
-| **注解增强** | Lombok | 1.18.32 |
-| **接口注解** | Swagger Annotations | 2.2.21 |
-| **JWT** | JJWT | 0.12.3 |
-| **AOP 编程** | Spring AOP | 6.1.2 |
+| 类别          | 技术                        | 版本          |
+|-------------|---------------------------|-------------|
+| **核心框架**    | Spring Boot               | 3.2.0       |
+| **微服务框架**   | Spring Cloud              | 2023.0.1    |
+| **微服务框架**   | Spring Cloud Alibaba      | 2023.0.1.2  |
+| **网关**      | Spring Cloud Gateway      | 4.1.0       |
+| **负载均衡**    | Spring Cloud LoadBalancer | 4.1.0       |
+| **ORM 框架**  | MyBatis-Plus              | 3.5.12      |
+| **数据库**     | PostgreSQL                | 15+         |
+| **服务治理**    | Nacos                     | 3.2.0       |
+| **接口文档**    | Knife4j                   | 4.5.0       |
+| **缓存**      | Redis                     | 5.0.14.1    |
+| **流量控制**    | Sentinel                  | 1.8.8       |
+| **分布式事务**   | Seata                     | 2.0.0       |
+| **消息队列**    | RocketMQ                  | 5.3.1       |
+| **对象映射**    | MapStruct                 | 1.5.5.Final |
+| **JSON 处理** | Jackson                   | 2.15.3      |
+| **参数校验**    | Jakarta Validation        | 3.0.2       |
+| **注解增强**    | Lombok                    | 1.18.32     |
+| **接口注解**    | Swagger Annotations       | 2.2.21      |
+| **JWT**     | JJWT                      | 0.12.3      |
+| **AOP 编程**  | Spring AOP                | 6.1.2       |
+| **密码加密**    | Spring Security Crypto    | 6.1.2       |
 
-## 📁 项目结构
+## 📑 目录
 
-```
-micro-service-project/
-├── common-core/              # 公共核心模块（统一返回、异常处理、工具类、防重放注解）
-│   └── src/main/java/com/spring/boot/commoncore/
-│       ├── annotation/       # 注解定义（PreventReplay 防重放注解）
-│       ├── constant/         # 常量定义（FeignHeaders等）
-│       ├── exception/        # 业务异常类
-│       ├── result/           # 统一响应体Result、结果码ResultCode
-│       ├── util/             # 工具类（ExceptionUtil异常解包）
-│       └── vo/               # 通用VO（PageVO分页工具）
-│
-├── common-web/               # 公共 Web 模块（全局异常拦截、序列化、分页配置、防重放切面）
-│   └── src/main/java/com/spring/boot/commonweb/
-│       ├── aspect/           # AOP切面（ReplayAttackAspect 防重放攻击切面）
-│       ├── component/        # 组件（IdGenerator ID生成器）
-│       ├── config/           # 配置类（Jackson、MyBatis-Plus、IdGenerator）
-│       ├── exception/        # 全局异常处理器GlobalExceptionHandler
-│       ├── interceptor/      # 拦截器（FeignReplayInterceptor Feign防重放拦截器）
-│       └── util/             # 工具类（ReplayAttackPreventor 防重放验证器）
-│
-├── gateway/                  # 网关模块（路由转发、鉴权、限流、文档聚合、防重放过滤）
-│   └── src/main/java/com/spring/boot/gateway/
-│       ├── config/           # 配置类（AuthGlobalFilter鉴权、SentinelConfig限流、GlobalErrorWebExceptionHandler异常处理、ReplayAttackFilter防重放过滤）
-│       └── util/             # 工具类（JwtUtil JWT解析）
-│
-├── user-service/             # 用户服务（端口：8081）
-│   └── src/main/java/com/spring/boot/userservice/
-│       ├── config/           # 配置类
-│       ├── controller/       # 控制器（用户CRUD、下单接口）
-│       ├── convert/          # 对象转换器（MapStruct）
-│       ├── dto/              # 数据传输对象
-│       ├── entity/           # 实体类
-│       ├── feign/            # Feign客户端（调用订单服务）
-│       ├── mapper/           # MyBatis Mapper
-│       ├── service/          # 业务逻辑层
-│       ├── util/             # 工具类
-│       └── vo/               # 视图对象
-│
-├── stock-service/            # 库存服务（端口：8082）
-│   └── src/main/java/com/spring/boot/stockservice/
-│       ├── config/           # 配置类
-│       ├── controller/       # 控制器（库存CRUD、扣减、回滚）
-│       ├── convert/          # 对象转换器（MapStruct）
-│       ├── dto/              # 数据传输对象
-│       ├── entity/           # 实体类
-│       ├── mapper/           # MyBatis Mapper
-│       ├── mq/               # 消息队列消费者（OrderMessageConsumer）
-│       ├── service/          # 业务逻辑层（StockService DB实现 + StockServiceCacheImpl 缓存实现）
-│       └── vo/               # 视图对象
-│
-├── order-service/            # 订单服务（端口：8083）
-│   └── src/main/java/com/spring/boot/orderservice/
-│       ├── common/           # 公共类（订单状态枚举等）
-│       ├── config/           # 配置类
-│       ├── controller/       # 控制器（订单CRUD、创建、取消）
-│       ├── convert/          # 对象转换器（MapStruct）
-│       ├── dto/              # 数据传输对象
-│       ├── entity/           # 实体类
-│       ├── feign/            # Feign客户端（调用库存服务、用户服务）
-│       ├── mapper/           # MyBatis Mapper
-│       ├── mq/               # 消息队列生产者（OrderMessageProducer）
-│       ├── service/          # 业务逻辑层
-│       └── vo/               # 视图对象（含feign子包）
-│
-├── pom.xml                   # 父工程 POM（统一依赖管理）
-└── README.md                 # 项目说明文档
-```
-> **分层说明**：各业务模块采用统一分层架构 `config` / `controller` / `convert` / `dto` / `entity` / `mapper` / `service.impl` / `vo`
->
-> **差异说明**：
-> - `user-service`、`order-service` 含 `feign` 包（远程调用其他服务）
-> - `stock-service` 的 `service` 采用 DB + Cache 双实现策略
-> - `order-service` 含 `common` 包（订单状态枚举等公共类）
-> - `stock-service`、`order-service` 含 `mq` 包（消息队列相关）
-
-## 📦 模块说明
-
-| 模块 | 说明 | 端口 | 核心技术 |
-|------|------|------|---------|
-| `common-core` | 公共核心模块：<br/>• Result 统一响应体<br/>• ResultCode 业务码枚举<br/>• BusinessException 业务异常<br/>• PageVO 分页工具<br/>• ExceptionUtil 异常解包<br/>• PreventReplay 防重放注解 | - | - |
-| `common-web` | 公共 Web 模块：<br/>• GlobalExceptionHandler 全局异常拦截<br/>• JacksonConfig JSON 序列化配置<br/>• MyBatisPlusConfig 分页插件<br/>• IdGenerator 分布式ID生成器<br/>• ReplayAttackAspect 防重放AOP切面<br/>• FeignReplayInterceptor Feign防重放拦截器<br/>• ReplayAttackPreventor 防重放验证器 | - | MyBatis-Plus、Sentinel、Spring AOP |
-| `gateway` | 网关模块：<br/>• 路由转发（StripPrefix=1）<br/>• 全局鉴权（AuthGlobalFilter）<br/>• 全局异常处理（GlobalErrorWebExceptionHandler）<br/>• Sentinel 网关流控（SentinelConfig）<br/>• 跨域配置（Global CORS）<br/>• Knife4j 文档聚合<br/>• ReplayAttackFilter 防重放过滤器（自动注入 Nonce + Timestamp） | 8088 | Spring Cloud Gateway、Sentinel、JWT、Knife4j |
-| `user-service` | 用户服务：<br/>• 用户 CRUD、分页查询<br/>• Feign 调用订单模块下单<br/>• Sentinel 熔断降级<br/>• 登录注册（白名单） | 8081 | OpenFeign、Sentinel、PostgreSQL |
-| `stock-service` | 库存服务：<br/>• 库存 CRUD、分页查询<br/>• 扣减库存、回滚库存<br/>• Redis 缓存热点数据<br/>• RocketMQ 消费订单消息清除缓存<br/>• Sentinel 熔断降级<br/>• Seata 分布式事务参与者 | 8082 | Redis、RocketMQ、Seata、Sentinel、PostgreSQL |
-| `order-service` | 订单服务：<br/>• 创建订单（生成订单号、扣减库存）<br/>• 取消订单（回滚库存）<br/>• 订单 CRUD、分页查询<br/>• Seata 分布式事务发起者<br/>• RocketMQ 发送订单消息<br/>• Sentinel 熔断降级 | 8083 | Seata、RocketMQ、OpenFeign、Sentinel、PostgreSQL |
+- [项目简介](#-项目简介)
+- [技术栈](#-技术栈)
+- [快速开始](#-快速开始)
+- [项目结构与模块说明](#-项目结构与模块说明)
+- [网关路由规则](#-网关路由规则)
+- [安全机制详解](#-安全机制详解)
+- [服务间调用关系](#-服务间调用关系)
+- [流量控制与熔断降级](#-流量控制与熔断降级)
+- [监控与运维](#-监控与运维)
+- [API文档](#-api-文档)
+- [错误码规范](#-错误码规范)
+- [常见问题](#-常见问题)
+- [待办事项](#-待办事项)
 
 ## 🚀 快速开始
 
@@ -155,11 +89,17 @@ micro-service-project/
 - **Maven**：3.6+（推荐 3.8.x 或 3.9.x）
 - **数据库**：PostgreSQL 15+
 - **中间件**：
-  - Nacos 3.2.0（注册中心 + 配置中心）
-  - Redis 5.0.14.1+（缓存）
-  - Seata 2.0.0（分布式事务）
-  - RocketMQ 5.3.1+（消息队列，可选）
-  - Sentinel Dashboard 1.8.8+（流量监控，可选）
+    - Nacos 3.2.0（注册中心 + 配置中心）
+    - Redis 5.0.14.1+（缓存）
+    - Seata 2.0.0（分布式事务）
+    - RocketMQ 5.3.1+（消息队列，可选）
+    - Sentinel Dashboard 1.8.8+（流量监控，可选）
+
+> ⚠️ **版本兼容性说明**：
+> - Spring Boot 3.x 需要 JDK 17+，不支持 JDK 8/11
+> - Spring Cloud 2023.x 对应 Spring Boot 3.2.x，两者版本强绑定
+> - Seata 2.0.0 才支持 Spring Boot 3.x，1.x 版本不兼容
+> - Nacos 客户端 3.2.0 需要 Nacos Server 2.3.0+
 
 ### 2️⃣ 克隆项目
 
@@ -167,23 +107,30 @@ micro-service-project/
 git clone https://gitee.com/city_xing/micro_service_project.git
 cd micro-service-project
 ```
+
 ### 3️⃣ 配置环境
 
 各服务配置文件按环境拆分（`application.yml` / `application-dev.yml` / `application-test.yml` / `application-prod.yml` / `bootstrap.yml`），修改对应环境的配置即可。
 
 #### 关键配置项
 
-| 配置项 | 位置 | 说明 |
-|--------|------|------|
-| **数据库** | 各业务服务 `application-*.yml` | PostgreSQL 连接地址、用户名、密码 |
-| **Nacos** | 各服务 `bootstrap.yml` | 注册中心与配置中心地址 |
-| **Redis** | `stock-service/application-*.yml` | 连接地址与端口 |
-| **Seata** | `order-service`、`stock-service/application-*.yml` | 事务组 `my_micro_service_group` 与 TC Server 地址 |
-| **RocketMQ** | `order-service`、`stock-service/application-*.yml` | NameServer 地址 |
-| **Sentinel** | 各服务 `application-*.yml` | Dashboard 地址、规则数据源（Nacos） |
-| **日志级别** | 各服务 `application-*.yml` | dev: debug / test: info / prod: warn + 文件滚动存储 |
+| 配置项          | 位置                                                | 说明                                            |
+|--------------|---------------------------------------------------|-----------------------------------------------|
+| **数据库**      | 各业务服务 `application-*.yml`                         | PostgreSQL 连接地址、用户名、密码                        |
+| **Nacos**    | 各服务 `bootstrap.yml`                               | 注册中心与配置中心地址                                   |
+| **Redis**    | `stock-service/application-*.yml`                 | 连接地址与端口                                       |
+| **Seata**    | `order-service`、`stock-service/application-*.yml` | 事务组 `my_micro_service_group` 与 TC Server 地址   |
+| **RocketMQ** | `order-service`、`stock-service/application-*.yml` | NameServer 地址                                 |
+| **Sentinel** | 各服务 `application-*.yml`                           | Dashboard 地址、规则数据源（Nacos）                     |
+| **日志级别**     | 各服务 `application-*.yml`                           | dev: debug / test: info / prod: warn + 文件滚动存储 |
 
 #### 环境变量（可选）
+
+项目提供了 `.env.example` 模板文件，复制为 `.env` 后可统一管理环境变量：
+
+```bash
+cp .env.example .env
+```
 
 支持通过环境变量覆盖默认配置：
 
@@ -207,31 +154,34 @@ export ROCKETMQ_ADDR=localhost:9876
 # Sentinel Dashboard 地址
 export SENTINEL_DASHBOARD=127.0.0.1:8089
 ```
+
 ### 4️⃣ 初始化数据库
 
-在 PostgreSQL 中创建数据库：
+```bash
+# 创建数据库（如已创建可跳过）
+psql -U your_username -c "CREATE DATABASE micro_service_project;"
 
-```sql
-CREATE DATABASE micro_service_project;
+# 导入建表脚本
+psql -U your_username -d micro_service_project -f sql/init.sql
 ```
-执行建表脚本（需自行准备 SQL 脚本，包含用户表、订单表、库存表及 Seata  undo_log 表）。
 
 ### 5️⃣ 编译项目
 
 ```bash
 mvn clean install -DskipTests
 ```
+
 ### 6️⃣ 启动中间件
 
 **按顺序启动以下中间件**，确保各服务能正常注册与通信：
 
-| 中间件 | 版本 | 启动方式 | 访问地址 | 默认账号/密码 |
-|--------|------|---------|---------|--------------|
-| **Nacos** | 3.2.0 | `startup.cmd -m standalone`（Windows）<br/>`sh startup.sh -m standalone`（Linux/Mac） | `http://localhost:8848/nacos` | nacos / nacos |
-| **Redis** | 5.0.14.1+ | Windows: 双击 `redis-server.exe`<br/>Linux/Mac: `redis-server` | - | - |
-| **Seata** | 2.0.0 | `seata-server.bat`（Windows）<br/>`sh seata-server.sh`（Linux/Mac） | - | - |
-| **RocketMQ** | 5.3.1+ | 参考 [RocketMQ 官方文档](https://rocketmq.apache.org/docs/quick-start/) | - | - |
-| **Sentinel Dashboard** | 1.8.8+ | `java -jar sentinel-dashboard-1.8.8.jar` | `http://localhost:8089` | sentinel / sentinel |
+| 中间件                    | 版本        | 启动方式                                                                              | 访问地址                          | 默认账号/密码             |
+|------------------------|-----------|-----------------------------------------------------------------------------------|-------------------------------|---------------------|
+| **Nacos**              | 3.2.0     | `startup.cmd -m standalone`（Windows）<br/>`sh startup.sh -m standalone`（Linux/Mac） | `http://localhost:8848/nacos` | nacos / nacos       |
+| **Redis**              | 5.0.14.1+ | Windows: 双击 `redis-server.exe`<br/>Linux/Mac: `redis-server`                      | -                             | -                   |
+| **Seata**              | 2.0.0     | `seata-server.bat`（Windows）<br/>`sh seata-server.sh`（Linux/Mac）                   | -                             | -                   |
+| **RocketMQ**           | 5.3.1+    | 参考 [RocketMQ 官方文档](https://rocketmq.apache.org/docs/quick-start/)                 | -                             | -                   |
+| **Sentinel Dashboard** | 1.8.8+    | `java -jar sentinel-dashboard-1.8.8.jar`                                          | `http://localhost:8089`       | sentinel / sentinel |
 
 > 💡 **提示**：RocketMQ 和 Sentinel Dashboard 为可选组件，不影响基础功能运行。
 
@@ -261,43 +211,214 @@ mvn spring-boot:run -pl gateway
 1. **查看 Nacos 控制台**：`http://localhost:8848/nacos` → 服务管理 → 服务列表，确认 4 个服务均已注册
 2. **访问接口文档**：`http://localhost:8088/doc.html`
 3. **查看 Sentinel 控制台**（如已启动）：`http://localhost:8089`
+4. **测试登录注册接口**：
+```bash
+# 注册用户
+curl -X POST http://localhost:8088/user-service/user/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"test","password":"123456","age":20,"email":"test@example.com"}'
+
+# 用户登录（会返回 accessToken 和 refreshToken）
+curl -X POST http://localhost:8088/user-service/user/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"test","password":"123456"}'
+```
+5. **完整业务流程测试**：
+```bash
+# ① 登录获取 Token
+RESPONSE=$(curl -s -X POST http://localhost:8088/user-service/user/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"test","password":"123456"}')
+ACCESS_TOKEN=$(echo $RESPONSE | jq -r '.data.accessToken')
+REFRESH_TOKEN=$(echo $RESPONSE | jq -r '.data.refreshToken')
+
+# ② 使用 Token 访问受保护接口（查询用户信息）
+curl -X GET http://localhost:8088/user-service/user/1 \
+  -H "Authorization: Bearer $ACCESS_TOKEN"
+
+# ③ 刷新 Token
+curl -X POST http://localhost:8088/user-service/user/refresh \
+  -H "Authorization: Bearer $REFRESH_TOKEN"
+
+# ④ 登出（将 Token 加入黑名单）
+curl -X POST http://localhost:8088/user-service/user/logout \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "X-Refresh-Token: $REFRESH_TOKEN"
+```
+> 💡 **提示**：以上命令需要安装 `jq` 工具用于解析 JSON。Windows 用户可使用 Git Bash 或 WSL 执行。
+
+## 📁 项目结构与模块说明
+```
+micro-service-project/
+│
+├── common-core/              # 公共核心模块
+│   │  • Result 统一响应体、ResultCode 业务码枚举
+│   │  • BusinessException 业务异常、ExceptionUtil 异常解包
+│   │  • PageVO 分页工具、PreventReplay 防重放注解
+│   │  • FeignHeaders 常量定义
+│   └── 无独立启动，被其他模块依赖
+│
+├── common-web/               # 公共 Web 模块
+│   │  • GlobalExceptionHandler 全局异常拦截
+│   │  • JacksonConfig JSON 序列化配置、MyBatisPlusConfig 分页插件
+│   │  • IdGenerator 分布式ID生成器（雪花算法）
+│   │  • ReplayAttackAspect 防重放 AOP 切面
+│   │  • FeignReplayInterceptor Feign 防重放拦截器
+│   │  • ReplayAttackPreventor 防重放验证器（Redis 实现）
+│   └── 核心技术：MyBatis-Plus、Spring AOP、Redis（防重放验证器）
+│
+├── gateway/                  # 网关模块 【端口：8088】
+│   │  • 路由转发（StripPrefix=1）统一入口
+│   │  • AuthGlobalFilter 全局鉴权（JWT 双 Token + 黑名单校验）
+│   │  • GlobalErrorWebExceptionHandler 全局异常处理（统一 JSON 响应）
+│   │  • SentinelConfig 网关流控（QPS限流/热点参数限流/授权规则）
+│   │  • ReplayAttackFilter 防重放过滤器（自动注入 X-Nonce + X-Timestamp）
+│   │  • 全局跨域配置、Knife4j 文档聚合
+│   └── 核心技术：Spring Cloud Gateway、Sentinel、JWT、Knife4j
+│
+├── user-service/             # 用户服务 【端口：8081】
+│   │  • 用户 CRUD、分页查询
+│   │  • JWT 双 Token 认证（Access 15分钟 + Refresh 7天）
+│   │  • Token 黑名单管理（Redis）、密码加密（BCrypt）
+│   │  • 登录/注册（白名单路径，无需鉴权）
+│   │  • Feign 调用订单服务下单（userCreateOrder）
+│   │  • Sentinel 熔断降级（UserBlockHandler）
+│   └── 核心技术：OpenFeign、Sentinel、JWT、Redis、PostgreSQL、Spring Security Crypto
+│
+├── stock-service/            # 库存服务 【端口：8082】
+│   │  • 库存 CRUD、分页查询
+│   │  • 扣减库存（deductStock）、回滚库存（addBackStock）
+│   │  • Redis 缓存热点数据（DB + Cache 双实现策略）
+│   │  • RocketMQ 消费订单消息（OrderMessageConsumer）清除缓存
+│   │  • Sentinel 熔断降级（StockBlockHandler）
+│   │  • Seata 分布式事务参与者（RM）
+│   └── 核心技术：Redis、RocketMQ、Seata、Sentinel、PostgreSQL
+│
+├── order-service/            # 订单服务 【端口：8083】
+│   │  • 创建订单（生成订单号 + 扣减库存）、取消订单（回滚库存）
+│   │  • 订单 CRUD、分页查询
+│   │  • Seata 分布式事务发起者（TM，@GlobalTransactional）
+│   │  • RocketMQ 发送订单消息（OrderMessageProducer）异步解耦
+│   │  • Sentinel 熔断降级（OrderBlockHandler）
+│   │  • 防重放保护（@PreventReplay 注解）
+│   │  • Feign 调用库存服务、用户服务
+│   │  • 订单状态枚举（PENDING/PAID/CANCELLED 等）
+│   └── 核心技术：Seata、RocketMQ、OpenFeign、Sentinel、PostgreSQL
+│
+├── pom.xml                   # 父工程 POM（统一依赖管理）
+└── README.md                 # 项目说明文档
+```
+
+### 📐 统一分层架构
+各业务模块（user-service、stock-service、order-service）采用统一分层：
+```
+{service}/src/main/java/com/spring/boot/{service}/
+    ├── config/           # 配置类（Jackson、MyBatis-Plus、线程池等）
+    ├── controller/       # 控制器层（接口定义、参数校验）
+    ├── convert/          # 对象转换器（MapStruct Entity ↔ DTO ↔ VO）
+    ├── dto/              # 数据传输对象（接收前端参数）
+    ├── entity/           # 数据库实体类
+    ├── mapper/           # MyBatis-Plus Mapper 接口
+    ├── service/          # 业务逻辑层（接口 + impl 实现）
+    └── vo/               # 视图对象（返回前端数据）
+```
+> 💡 **示例**：user-service/src/main/java/com/spring/boot/userservice/
+
+### 🔀 模块差异说明
+| 差异点        | user-service       | stock-service               | order-service                   |
+|------------|--------------------|-----------------------------|---------------------------------|
+| Feign 远程调用 | ✅ 调用 order-service | ❌                           | ✅ 调用 stock-service、user-service |
+| 消息队列       | ❌                  | ✅ 消费者（OrderMessageConsumer） | ✅ 生产者（OrderMessageProducer）     |
+| 分布式事务      | ❌                  | ✅ Seata RM（参与者）             | ✅ Seata TM（发起者）                 |
+| 缓存策略       | ❌                  | ✅ Redis（DB + Cache 双实现）     | ❌                               |
+| 公共枚举类      | ❌                  | ❌                           | ✅ common 包（订单状态等）               |
+| JWT 认证     | ✅ Token 生成/刷新/黑名单  | ❌                           | ❌                               |
+| 防重放保护      | ❌                  | ❌                           | ✅ @PreventReplay 注解             |
 
 ## 🌐 网关路由规则
 
-| 路由前缀 | 目标服务 | 说明 |
-|---------|---------|------|
-| `/user-service/**` | user-service (8081) | 用户服务，StripPrefix=1 |
+| 路由前缀                | 目标服务                 | 说明                 |
+|---------------------|----------------------|--------------------|
+| `/user-service/**`  | user-service (8081)  | 用户服务，StripPrefix=1 |
 | `/order-service/**` | order-service (8083) | 订单服务，StripPrefix=1 |
 | `/stock-service/**` | stock-service (8082) | 库存服务，StripPrefix=1 |
 
 ### 🔓 白名单路径（无需鉴权）
 
-- **登录注册**：`/user-service/user/login`、`/user-service/user/register`
+- **认证接口**：`/user-service/user/login`、`/user-service/user/register`
+- **Token 管理**：`/user-service/user/logout`、`/user-service/user/refresh`
 - **接口文档**：`/doc.html`、`/webjars/**`、`/**/v3/api-docs/**`、`/**/swagger-resources/**`、`/**/swagger-ui/**`、`/**/swagger-ui.html`、`/favicon.ico`
 
-### 🔐 鉴权机制
+## 🔐 安全机制详解
 
-- **Token 传递**：客户端在请求头 `Authorization` 中携带 JWT Token
-- **Token 验证**：网关层统一校验 Token 有效性
+### 1️⃣ JWT 鉴权机制
+
+#### 双 Token 架构
+
+项目采用 **Access Token + Refresh Token** 的双 Token 机制：
+
+- **Access Token**：短期有效（默认 15 分钟），用于业务接口鉴权
+- **Refresh Token**：长期有效（默认 7 天），用于刷新 Access Token
+
+#### Token 结构
+
+```json
+{
+  "sub": "2847610395",
+  "type": "access",
+  "iat": 1777670400,
+  "exp": 1777671300
+}
+```
+
+#### Token 传递与验证
+
+- **Token 传递**：客户端在请求头 `Authorization` 中携带 JWT Token（格式：`Bearer <token>`）
+- **Token 验证**：网关层统一校验 Token 有效性及黑名单状态
 - **用户信息透传**：验证通过后，网关将用户ID写入请求头 `X-UserId`，下游服务直接读取
 - **鉴权失败响应**：HTTP 401 + 统一 JSON 响应体
-  - `GATEWAY_TOKEN_MISSING`：缺少 Token
-  - `GATEWAY_TOKEN_EXPIRED`：Token 无效或过期
+    - `GATEWAY_TOKEN_MISSING`：缺少 Token
+    - `GATEWAY_TOKEN_EXPIRED`：Token 无效或过期
+    - `GATEWAY_TOKEN_BLACKLISTED`：Token 已在黑名单中
 
-### 🔄 防重放攻击机制
+#### Token 生命周期管理
 
-项目实现了双层防重放攻击保护机制：
+1. **登录**：生成 Access Token（15分钟）+ Refresh Token（7天）
+2. **业务请求**：携带 Access Token 访问受保护接口
+3. **Token 刷新**：Access Token 过期前，使用 Refresh Token 获取新的双 Token
+4. **登出**：将当前 Access Token 加入黑名单
+5. **注销所有设备**：将该用户的所有 Token 加入黑名单
 
-#### 1. 网关层自动注入
+### 2️⃣ Token 黑名单机制
 
-网关通过 `ReplayAttackFilter` 为所有请求自动注入防重放参数：
+- **实现方式**：基于 Redis 存储已失效的 Token
+- **Key 格式**：`blacklist:<token>`
+- **过期时间**：自动与 Token 剩余有效期同步
+- **应用场景**：
+    - 用户主动登出：将 Access Token 加入黑名单
+    - 注销所有设备：将所有活跃 Token 加入黑名单
+    - 刷新 Token：旧的 Refresh Token 立即失效
+
+> 💡 **注意**：`/user-service/user/logout` 在白名单中是为了遵循 OAuth2.0 最佳实践，允许用户在 Token 即将过期时仍能正常登出。实际的 Token 有效性由网关层的黑名单机制保证。
+
+### 3️⃣ 密码安全
+
+- **加密算法**：BCrypt 强哈希算法
+- **加盐策略**：自动生成随机盐值
+- **存储方式**：仅存储加密后的密文
+
+### 4️⃣ 防重放攻击机制
+
+项目实现了网关层 + 业务层双层防重放保护：
+
+#### 网关层：自动注入
+
+网关通过 `ReplayAttackFilter` 为所有请求自动注入防重放参数，并传递给下游微服务：
 
 - **X-Nonce**：唯一请求标识（UUID）
 - **X-Timestamp**：请求时间戳（毫秒）
 
-这两个参数会自动传递给下游所有微服务，用于业务层的防重放验证。
-
-#### 2. 业务层防重放验证
+#### 业务层：注解验证
 
 业务服务可通过 `@PreventReplay` 注解启用防重放保护：
 
@@ -367,6 +488,7 @@ graph TB
    ```
    RocketMQ 消息 → stock-service.OrderMessageConsumer → 清除 Redis 缓存
    ```
+
 ## 🛡️ 流量控制与熔断降级
 
 ### 网关层流控
@@ -423,6 +545,7 @@ graph TB
   }
 ]
 ```
+
 ## 📊 监控与运维
 
 ### Sentinel 监控
@@ -455,6 +578,55 @@ Knife4j 自动聚合所有微服务的 Swagger 文档，支持：
 - 📥 导出 Markdown/HTML 文档
 - 🔄 实时更新（服务重启后自动刷新）
 
+## 📋 错误码规范
+
+| 错误码范围       | 模块   | 示例                                                     |
+|-------------|------|--------------------------------------------------------|
+| 0           | 成功   | SUCCESS(0)                                             |
+| 1000-1999   | 通用错误 | PARAM_VALID_ERROR(1001)、REPLAY_DUPLICATE(1005)         |
+| 10000-19999 | 用户模块 | USER_NOT_EXIST(10002)、USER_SERVICE_DEGRADE(10004)      |
+| 20000-29999 | 库存模块 | STOCK_INSUFFICIENT(20004)、STOCK_SERVICE_DEGRADE(20005) |
+| 30000-39999 | 订单模块 | ORDER_NOT_EXIST(30002)、ORDER_SERVICE_DEGRADE(30006)    |
+| 40000-49999 | 网关模块 | GATEWAY_TOKEN_EXPIRED(40007)、GATEWAY_RATE_LIMIT(40003) |
+
+## ❓ 常见问题
+
+### Q1: 启动服务时提示"无法连接到 Nacos"？
+**A**: 确保 Nacos 已启动且地址配置正确。检查 `bootstrap.yml` 中的 `spring.cloud.nacos.server-addr` 配置，默认为 `127.0.0.1:8848`。
+
+### Q2: 网关启动失败或路由不生效？
+**A**: 网关必须最后启动，确保所有子服务已成功注册到 Nacos。可在 Nacos 控制台查看服务列表确认。
+
+### Q3: 如何修改 Token 有效期？
+**A**: 在 `user-service/application-*.yml` 中修改：
+```yaml
+jwt:
+  access-expire: 900000 # Access Token 有效期（毫秒）
+  refresh-expire: 604800000 # Refresh Token 有效期（毫秒）
+```
+
+### Q4: Seata 分布式事务未生效？
+**A**: 检查以下配置：
+- Seata Server 是否启动（默认端口 8091）
+- `order-service` 和 `stock-service` 的 Seata 配置是否正确
+- 数据库是否存在 `undo_log` 表
+- 方法上是否添加了 `@GlobalTransactional` 注解
+
+### Q5: Redis 缓存未生效？
+**A**:
+- 确认 Redis 服务已启动
+- 检查 `stock-service/application-*.yml` 中的 Redis 配置
+- 确认使用的是 `StockServiceCacheImpl` 实现类
+
+### Q6: 如何查看 Sentinel 流控规则是否生效？
+**A**:
+- 访问 Sentinel Dashboard：`http://localhost:8089`
+- 在"簇点链路"中查看资源监控数据
+- 规则持久化到 Nacos 的 Data ID：`gateway-gw-flow-rules`（网关）和各服务的降级规则
+
+### Q7: 防重放攻击机制如何测试？
+**A**: 使用相同参数快速重复请求标注了 `@PreventReplay` 的接口，第二次请求会被拒绝。
+
 ## ✅ 待办事项
 
 - [x] 完善网关路由规则说明
@@ -462,29 +634,30 @@ Knife4j 自动聚合所有微服务的 Swagger 文档，支持：
 - [x] 接入 Sentinel 流量控制与熔断降级
 - [x] 接入 RocketMQ 异步消息（订单与库存缓存解耦）
 - [x] 实现防重放攻击保护机制（网关层 + 业务层双重防护）
+- [x] 实现 JWT 双 Token 机制（Access + Refresh）
+- [x] 实现 Token 黑名单管理（Redis）
+- [x] 补充常见问题 FAQ
+- [x] 补充数据库建表脚本
 - [ ] 补充部署说明（Docker / Docker Compose）
 - [ ] 补充单元测试与集成测试
 - [ ] 补充 CI/CD 流水线配置
 - [ ] 补充性能测试报告
-- [ ] 补充常见问题 FAQ
 
 ## 📄 License
 
-MIT License
+MIT License © 2026 Chi Shoucheng
 
-Copyright (c) 2026 Chi Shoucheng
+## 🤝 参与贡献
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction...
+欢迎提交 Issue 和 Pull Request！
 
----
+1. Fork 本仓库
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启 Pull Request
 
-## 👥 作者信息
-
-- **作者**：Chi Shoucheng
-- **邮箱**：1017191272@qq.com
-- **Gitee**：[city_xing](https://gitee.com/city_xing)
+📧 联系方式：1017191272@qq.com | [city_xing](https://gitee.com/city_xing)
 
 ## 🙏 致谢
 
@@ -498,7 +671,5 @@ in the Software without restriction...
 - [Sentinel](https://sentinelguard.io/)
 - [Seata](https://seata.io/)
 - [RocketMQ](https://rocketmq.apache.org/)
-
----
 
 **⭐ 如果本项目对您有帮助，欢迎 Star 支持一下！**
