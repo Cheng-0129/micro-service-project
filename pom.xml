@@ -294,11 +294,6 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>3.5.4</version>
-
-                    <configuration>
-                        <skipTests>false</skipTests>  <!-- ❌ 这行会跳过所有模块的测试！(true时) -->
-                    </configuration>
-                    
                 </plugin>
             </plugins>
         </pluginManagement>
