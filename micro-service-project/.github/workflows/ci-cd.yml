@@ -1,4 +1,4 @@
-# .gitee/workflows/ci-cd.yml
+# .github/workflows/ci-cd.yml
 name: Micro Service CI/CD Pipeline
 
 on:
@@ -6,12 +6,10 @@ on:
     branches: [ main, master, develop ]
   pull_request:
     branches: [ main, master ]
-  # 支持手动触发
   workflow_dispatch:
 
 env:
   JAVA_VERSION: '17'
-  # 阿里云镜像仓库
   DOCKER_REGISTRY: registry.cn-hangzhou.aliyuncs.com
 
 jobs:
@@ -19,13 +17,12 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     outputs:
-      # 供后续任务使用，标记哪些模块有变更
       changed_modules: ${{ steps.detect_changes.outputs.modules }}
     steps:
       - name: 拉取代码
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # 获取完整历史，用于变更检测
+          fetch-depth: 0
 
       - name: 设置 JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
@@ -34,7 +31,6 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # 缓存 Maven 本地仓库（关键：多模块项目编译慢）
       - name: 缓存 Maven 依赖
         uses: actions/cache@v4
         with:
@@ -43,16 +39,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: 检测变更模块（增量构建）
+      - name: 检测变更模块
         id: detect_changes
         run: |
-          # 获取本次变更的文件列表
           CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} 2>/dev/null || echo "")
-
           MODULES=""
-          # 根据变更文件判断需要构建哪些模块
           if echo "$CHANGED_FILES" | grep -q "common-core/\|common-web/\|pom.xml"; then
-            MODULES="all"  # 公共模块变更，全部重新构建
+            MODULES="all"
           elif echo "$CHANGED_FILES" | grep -q "user-service/"; then
             MODULES="$MODULES,user-service"
           elif echo "$CHANGED_FILES" | grep -q "stock-service/"; then
@@ -62,22 +55,20 @@ jobs:
           elif echo "$CHANGED_FILES" | grep -q "gateway/"; then
             MODULES="$MODULES,gateway"
           else
-            MODULES="all"  # 默认全量构建
+            MODULES="all"
           fi
-
           echo "modules=$MODULES" >> $GITHUB_OUTPUT
           echo "变更模块: $MODULES"
 
       - name: Maven 全量编译 & 测试
         if: steps.detect_changes.outputs.modules == 'all'
         run: |
-          mvn clean package -DskipTests=false -B -pl '!gateway'  # 网关不需要打包 Jar
+          mvn clean package -DskipTests=false -B -pl '!gateway'
 
       - name: Maven 增量编译 & 测试
         if: steps.detect_changes.outputs.modules != 'all'
         run: |
           MODULES="${{ steps.detect_changes.outputs.modules }}"
-          # 先安装公共依赖，再编译变更模块
           mvn install -DskipTests -pl common-core,common-web -am -q
           mvn package -DskipTests=false -pl ${MODULES} -am -B
 
@@ -128,7 +119,7 @@ jobs:
           path: '**/target/pmd.xml'
           retention-days: 3
 
-  # ==================== 3. Docker 镜像构建（并行） ====================
+  # ==================== 3. Docker 镜像构建 ====================
   docker-build:
     needs: build-and-test
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
@@ -145,18 +136,14 @@ jobs:
           name: service-jars
           path: jars/
 
-      # 为每个服务准备对应的 Jar 包
       - name: 准备 ${{ matrix.service }} 构建上下文
         run: |
           mkdir -p docker-context/${{ matrix.service }}
-          # 复制对应服务的 Dockerfile（如果有独立 Dockerfile）
           if [ -f ${{ matrix.service }}/Dockerfile ]; then
             cp ${{ matrix.service }}/Dockerfile docker-context/${{ matrix.service }}/
           else
-            # 使用根目录通用 Dockerfile
             cp Dockerfile docker-context/${{ matrix.service }}/
           fi
-          # 复制对应的 Jar 包
           cp jars/${{ matrix.service }}/target/*.jar docker-context/${{ matrix.service }}/app.jar 2>/dev/null || \
           cp jars/*${{ matrix.service }}*.jar docker-context/${{ matrix.service }}/app.jar
 
@@ -170,15 +157,11 @@ jobs:
       - name: 构建并推送 ${{ matrix.service }} 镜像
         run: |
           IMAGE_NAME=${{ env.DOCKER_REGISTRY }}/${{ secrets.ALIYUN_NAMESPACE }}/${{ matrix.service }}
-          SHORT_SHA=${GITHUB_SHA::8}
-
+          SHORT_SHA=${{ github.sha }}
+          SHORT_SHA=${SHORT_SHA::8}
           cd docker-context/${{ matrix.service }}
-
-          # 构建镜像，打上 commit sha 和 latest 标签
           docker build -t ${IMAGE_NAME}:${SHORT_SHA} .
           docker push ${IMAGE_NAME}:${SHORT_SHA}
-
-          # 只有 main/master 分支才打 latest 标签
           docker tag ${IMAGE_NAME}:${SHORT_SHA} ${IMAGE_NAME}:latest
           docker push ${IMAGE_NAME}:latest
 
@@ -187,7 +170,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: 检查 SQL 脚本变更
         run: |
           CHANGED_SQL=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep 'sql/' || true)
@@ -197,63 +179,45 @@ jobs:
             echo "请确认已在测试环境执行过迁移脚本"
           fi
 
-      - name: 验证 SQL 语法（PostgreSQL）
-        if: false  # 有测试数据库时启用
-        run: |
-          for f in sql/*.sql; do
-            echo "检查: $f"
-            psql ${{ secrets.TEST_DB_URL }} -f "$f" --dry-run
-          done
-
-  # ==================== 5. 部署到服务器 ====================
+  # ==================== 5. 部署 ====================
   deploy:
     needs: docker-build
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - name: 部署到生产服务器
+      - name: 部署到服务器
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT || 22 }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: 22
           script: |
             cd /opt/micro-service-project
 
-            # 拉取所有服务最新镜像（并行）
             for SERVICE in user-service stock-service order-service gateway; do
               docker pull ${{ env.DOCKER_REGISTRY }}/${{ secrets.ALIYUN_NAMESPACE }}/${SERVICE}:latest &
             done
             wait
 
-            # 按依赖顺序重启服务
             echo "=== 重启基础设施 ==="
-            docker compose up -d nacos redis  # 确保中间件运行
+            docker compose up -d nacos redis
 
-            echo "=== 重启业务服务（按依赖顺序）==="
+            echo "=== 重启业务服务 ==="
             docker compose up -d user-service
-            sleep 10  # 等待注册到 Nacos
-
+            sleep 10
             docker compose up -d stock-service
             sleep 10
-
             docker compose up -d order-service
             sleep 10
-
-            docker compose up -d gateway  # 网关最后启动
-
-            # 健康检查
-            echo "=== 等待服务就绪 ==="
+            docker compose up -d gateway
             sleep 30
 
-            # 检查各服务健康状态
-            for SERVICE in 8081 8082 8083 8088; do
-              HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:${SERVICE}/actuator/health || echo "000")
-              echo "端口 ${SERVICE}: HTTP ${HTTP_CODE}"
+            for PORT in 8081 8082 8083 8088; do
+              HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:${PORT}/actuator/health || echo "000")
+              echo "端口 ${PORT}: HTTP ${HTTP_CODE}"
             done
 
-            # 清理旧镜像
             docker image prune -af --filter "until=72h"
 
   # ==================== 6. 失败通知 ====================
@@ -268,17 +232,10 @@ jobs:
         run: |
           if [ "$BUILD_STATUS" = "success" ]; then
             TITLE="✅ 部署成功 - 微服务项目"
-            COLOR="info"
           else
             TITLE="❌ 部署失败 - 微服务项目"
-            COLOR="warning"
           fi
 
           curl -X POST '${{ secrets.WECOM_WEBHOOK }}' \
             -H 'Content-Type: application/json' \
-            -d "{
-              \"msgtype\": \"markdown\",
-              \"markdown\": {
-                \"content\": \"## ${TITLE}\n> 分支: ${{ github.ref_name }}\n> 提交: ${{ github.sha::8 }}\n> 提交信息: ${{ github.event.head_commit.message }}\n> 状态: ${BUILD_STATUS}\n> [查看详情](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\"
-              }
-            }"
+            -d "{\"msgtype\":\"markdown\",\"markdown\":{\"content\":\"## ${TITLE}\n> 分支: ${{ github.ref_name }}\n> 提交: ${{ github.sha }}\n> 状态: ${BUILD_STATUS}\n> [查看详情](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\"}}"
