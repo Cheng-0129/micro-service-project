@@ -21,8 +21,12 @@ jobs:
     steps:
       - name: 拉取代码
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+
+      - name: 确认代码目录
+        run: |
+          pwd
+          ls -la
+          ls pom.xml
 
       - name: 设置 JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
