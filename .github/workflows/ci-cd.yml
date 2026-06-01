@@ -11,6 +11,7 @@ on:
 env:
   JAVA_VERSION: '17'
   DOCKER_REGISTRY: registry.cn-hangzhou.aliyuncs.com
+  ALIYUN_NAMESPACE: ${{ secrets.ALIYUN_NAMESPACE }}
 
 jobs:
   # ==================== 1. 编译 & 单元测试 ====================
@@ -21,6 +22,8 @@ jobs:
     steps:
       - name: 拉取代码
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - name: 确认代码目录
         run: |
@@ -46,44 +49,55 @@ jobs:
       - name: 检测变更模块
         id: detect_changes
         run: |
-          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} 2>/dev/null || echo "")
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
           MODULES=""
-          if echo "$CHANGED_FILES" | grep -q "common-core/\|common-web/\|pom.xml"; then
+          
+          if echo "$CHANGED_FILES" | grep -q "common-core/\|common-web/\|^pom\.xml$"; then
             MODULES="all"
-          elif echo "$CHANGED_FILES" | grep -q "user-service/"; then
-            MODULES="$MODULES,user-service"
-          elif echo "$CHANGED_FILES" | grep -q "stock-service/"; then
-            MODULES="$MODULES,stock-service"
-          elif echo "$CHANGED_FILES" | grep -q "order-service/"; then
-            MODULES="$MODULES,order-service"
-          elif echo "$CHANGED_FILES" | grep -q "gateway/"; then
-            MODULES="$MODULES,gateway"
           else
-            MODULES="all"
+            if echo "$CHANGED_FILES" | grep -q "user-service/"; then
+              MODULES="$MODULES,user-service"
+            fi
+            if echo "$CHANGED_FILES" | grep -q "stock-service/"; then
+              MODULES="$MODULES,stock-service"
+            fi
+            if echo "$CHANGED_FILES" | grep -q "order-service/"; then
+              MODULES="$MODULES,order-service"
+            fi
+            if echo "$CHANGED_FILES" | grep -q "gateway/"; then
+              MODULES="$MODULES,gateway"
+            fi
+          
+            if [ -z "$MODULES" ]; then
+              MODULES="all"
+            else
+              MODULES=${MODULES#,}
+            fi
           fi
+          
           echo "modules=$MODULES" >> $GITHUB_OUTPUT
           echo "变更模块: $MODULES"
 
       - name: Maven 全量编译 & 测试
         if: steps.detect_changes.outputs.modules == 'all'
         run: |
-          mvn clean package -DskipTests=true -B
+          mvn clean verify -B
 
       - name: Maven 增量编译 & 测试
         if: steps.detect_changes.outputs.modules != 'all'
         run: |
           MODULES="${{ steps.detect_changes.outputs.modules }}"
-          mvn install -DskipTests -pl common-core,common-web -am -q
-          mvn package -DskipTests=true -pl ${MODULES} -am -B
+          mvn clean verify -pl ${MODULES} -am -B
 
       - name: 上传各服务 Jar 包
         uses: actions/upload-artifact@v4
         with:
-          name: service-jars
+          name: service-jars-${{ github.run_id }}
           path: |
             user-service/target/*.jar
             stock-service/target/*.jar
             order-service/target/*.jar
+            gateway/target/*.jar
             !*-sources.jar
             !*-javadoc.jar
           retention-days: 7
@@ -92,7 +106,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-reports
+          name: test-reports-${{ github.run_id }}
           path: '**/target/surefire-reports/'
           retention-days: 3
 
@@ -103,6 +117,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: 设置 JDK
         uses: actions/setup-java@v4
         with:
@@ -112,14 +127,14 @@ jobs:
 
       - name: 阿里代码规约扫描
         run: |
-          mvn pmd:pmd -DskipTests -B || true
+          mvn pmd:pmd -DskipTests -B
         continue-on-error: true
 
       - name: 上传 PMD 报告
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: pmd-reports
+          name: pmd-reports-${{ github.run_id }}
           path: '**/target/pmd.xml'
           retention-days: 3
 
@@ -137,19 +152,25 @@ jobs:
       - name: 下载 Jar 包
         uses: actions/download-artifact@v4
         with:
-          name: service-jars
+          name: service-jars-${{ github.run_id }}
           path: jars/
 
       - name: 准备 ${{ matrix.service }} 构建上下文
         run: |
           mkdir -p docker-context/${{ matrix.service }}
+          
           if [ -f ${{ matrix.service }}/Dockerfile ]; then
             cp ${{ matrix.service }}/Dockerfile docker-context/${{ matrix.service }}/
           else
             cp Dockerfile docker-context/${{ matrix.service }}/
           fi
-          cp jars/${{ matrix.service }}/target/*.jar docker-context/${{ matrix.service }}/app.jar 2>/dev/null || \
-          cp jars/*${{ matrix.service }}*.jar docker-context/${{ matrix.service }}/app.jar
+          
+          find jars/ -name "*.jar" -path "*${{ matrix.service }}*" ! -name "*sources*" ! -name "*javadoc*" -exec cp {} docker-context/${{ matrix.service }}/app.jar \;
+          
+          if [ ! -f docker-context/${{ matrix.service }}/app.jar ]; then
+            echo "错误: 未找到 ${{ matrix.service }} 的 jar 包"
+            exit 1
+          fi
 
       - name: 登录阿里云镜像仓库
         uses: docker/login-action@v3
@@ -160,32 +181,60 @@ jobs:
 
       - name: 构建并推送 ${{ matrix.service }} 镜像
         run: |
-          IMAGE_NAME=${{ env.DOCKER_REGISTRY }}/${{ secrets.ALIYUN_NAMESPACE }}/${{ matrix.service }}
+          IMAGE_NAME=${{ env.DOCKER_REGISTRY }}/${{ env.ALIYUN_NAMESPACE }}/${{ matrix.service }}
           SHORT_SHA=${{ github.sha }}
           SHORT_SHA=${SHORT_SHA::8}
+          
           cd docker-context/${{ matrix.service }}
+          
           docker build -t ${IMAGE_NAME}:${SHORT_SHA} .
-          docker push ${IMAGE_NAME}:${SHORT_SHA}
           docker tag ${IMAGE_NAME}:${SHORT_SHA} ${IMAGE_NAME}:latest
+          
+          docker push ${IMAGE_NAME}:${SHORT_SHA}
           docker push ${IMAGE_NAME}:latest
+
+      - name: 镜像漏洞扫描
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.DOCKER_REGISTRY }}/${{ env.ALIYUN_NAMESPACE }}/${{ matrix.service }}:${{ github.sha }}
+          format: 'table'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH'
+        continue-on-error: true
 
   # ==================== 4. 数据库迁移检查 ====================
   db-migration-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: 检查 SQL 脚本变更
         run: |
-          CHANGED_SQL=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep 'sql/' || true)
+          CHANGED_SQL=$(git diff --name-only HEAD~1 HEAD | grep 'sql/' || true)
           if [ -n "$CHANGED_SQL" ]; then
             echo "⚠️  检测到数据库脚本变更："
             echo "$CHANGED_SQL"
-            echo "请确认已在测试环境执行过迁移脚本"
+            echo ""
+            echo "请确认："
+            echo "1. 已在测试环境执行过迁移脚本"
+            echo "2. SQL 脚本语法正确"
+            echo "3. 向后兼容，不影响现有数据"
+          
+            for sql_file in $CHANGED_SQL; do
+              if [ -f "$sql_file" ]; then
+                echo ""
+                echo "=== 检查文件: $sql_file ==="
+                head -20 "$sql_file"
+              fi
+            done
+          else
+            echo "✅ 无数据库脚本变更"
           fi
 
   # ==================== 5. 部署 ====================
   deploy:
-    needs: docker-build
+    needs: [docker-build, db-migration-check]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -198,48 +247,86 @@ jobs:
           port: 22
           script: |
             cd /opt/micro-service-project
-
+            
+            echo "=== 拉取最新镜像 ==="
             for SERVICE in user-service stock-service order-service gateway; do
-              docker pull ${{ env.DOCKER_REGISTRY }}/${{ secrets.ALIYUN_NAMESPACE }}/${SERVICE}:latest &
+              docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.ALIYUN_NAMESPACE }}/${SERVICE}:latest &
             done
             wait
-
+            echo "✅ 镜像拉取完成"
+            
             echo "=== 重启基础设施 ==="
             docker compose up -d nacos redis
-
-            echo "=== 重启业务服务 ==="
-            docker compose up -d user-service
-            sleep 10
-            docker compose up -d stock-service
-            sleep 10
-            docker compose up -d order-service
-            sleep 10
-            docker compose up -d gateway
-            sleep 30
-
+            sleep 15
+            
+            echo "=== 按顺序重启业务服务 ==="
+            
+            SERVICES=("user-service" "stock-service" "order-service" "gateway")
+            PORTS=(8081 8082 8083 8088)
+            
+            for i in "${!SERVICES[@]}"; do
+              SERVICE=${SERVICES[$i]}
+              PORT=${PORTS[$i]}
+            
+              echo ""
+              echo ">>> 部署 $SERVICE (端口: $PORT)"
+            
+              docker compose up -d $SERVICE
+            
+              echo "等待 $SERVICE 启动..."
+              MAX_RETRIES=30
+              RETRY_COUNT=0
+            
+              while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+                HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:${PORT}/actuator/health || echo "000")
+            
+                if [ "$HTTP_CODE" = "200" ]; then
+                  echo "✅ $SERVICE 启动成功 (HTTP $HTTP_CODE)"
+                  break
+                fi
+            
+                RETRY_COUNT=$((RETRY_COUNT + 1))
+                echo "  等待中... ($RETRY_COUNT/$MAX_RETRIES) HTTP: $HTTP_CODE"
+                sleep 5
+              done
+            
+              if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+                echo "❌ $SERVICE 启动超时，开始回滚"
+                docker compose logs --tail=50 $SERVICE
+                docker compose down
+                exit 1
+              fi
+            
+              sleep 10
+            done
+            
+            echo ""
+            echo "=== 所有服务部署完成 ==="
+            echo "服务状态检查:"
             for PORT in 8081 8082 8083 8088; do
               HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:${PORT}/actuator/health || echo "000")
-              echo "端口 ${PORT}: HTTP ${HTTP_CODE}"
+              echo "  端口 ${PORT}: HTTP ${HTTP_CODE}"
             done
-
+            
+            echo ""
+            echo "=== 清理旧镜像 ==="
             docker image prune -af --filter "until=72h"
+            
+            echo ""
+            echo "✅ 部署完成！"
 
   # ==================== 6. 失败通知 ====================
   notify:
     needs: [build-and-test, docker-build, deploy]
-    if: always()
+    if: failure()
     runs-on: ubuntu-latest
     steps:
       - name: 发送企业微信通知
         env:
           BUILD_STATUS: ${{ needs.deploy.result }}
         run: |
-          if [ "$BUILD_STATUS" = "success" ]; then
-            TITLE="✅ 部署成功 - 微服务项目"
-          else
-            TITLE="❌ 部署失败 - 微服务项目"
-          fi
-
+          TITLE="❌ CI/CD 失败 - 微服务项目"
+          
           curl -X POST '${{ secrets.WECOM_WEBHOOK }}' \
             -H 'Content-Type: application/json' \
-            -d "{\"msgtype\":\"markdown\",\"markdown\":{\"content\":\"## ${TITLE}\n> 分支: ${{ github.ref_name }}\n> 提交: ${{ github.sha }}\n> 状态: ${BUILD_STATUS}\n> [查看详情](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\"}}"
+            -d "{\"msgtype\":\"markdown\",\"markdown\":{\"content\":\"## ${TITLE}\n> 分支: ${{ github.ref_name }}\n> 提交: ${{ github.event.head_commit.message }}\n> 提交者: ${{ github.actor }}\n> 状态: ${BUILD_STATUS}\n> [查看详情](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\"}}"
