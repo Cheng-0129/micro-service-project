@@ -10,7 +10,7 @@ on:
 
 env:
   JAVA_VERSION: '17'
-  DOCKER_REGISTRY: registry.cn-hangzhou.aliyuncs.com
+  DOCKER_REGISTRY: crpi-1iszvp3shb05ntyf.cn-hangzhou.personal.cr.aliyuncs.com
 
 jobs:
   # ==================== 1. 编译 ====================
