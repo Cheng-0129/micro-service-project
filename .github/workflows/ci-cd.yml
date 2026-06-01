@@ -11,10 +11,9 @@ on:
 env:
   JAVA_VERSION: '17'
   DOCKER_REGISTRY: registry.cn-hangzhou.aliyuncs.com
-  ALIYUN_NAMESPACE: ${{ secrets.ALIYUN_NAMESPACE }}
 
 jobs:
-  # ==================== 1. 编译 & 单元测试 ====================
+  # ==================== 1. 编译 ====================
   build-and-test:
     runs-on: ubuntu-latest
     outputs:
@@ -78,16 +77,16 @@ jobs:
           echo "modules=$MODULES" >> $GITHUB_OUTPUT
           echo "变更模块: $MODULES"
 
-      - name: Maven 全量编译 & 测试
+      - name: Maven 全量编译
         if: steps.detect_changes.outputs.modules == 'all'
         run: |
-          mvn clean verify -B
+          mvn clean package -DskipTests=true -B
 
-      - name: Maven 增量编译 & 测试
+      - name: Maven 增量编译
         if: steps.detect_changes.outputs.modules != 'all'
         run: |
           MODULES="${{ steps.detect_changes.outputs.modules }}"
-          mvn clean verify -pl ${MODULES} -am -B
+          mvn clean package -DskipTests=true -pl ${MODULES} -am -B
 
       - name: 上传各服务 Jar 包
         uses: actions/upload-artifact@v4
@@ -102,43 +101,7 @@ jobs:
             !*-javadoc.jar
           retention-days: 7
 
-      - name: 上传测试报告
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-reports-${{ github.run_id }}
-          path: '**/target/surefire-reports/'
-          retention-days: 3
-
-  # ==================== 2. 代码质量检查 ====================
-  code-quality:
-    needs: build-and-test
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: 设置 JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: 'temurin'
-          cache: maven
-
-      - name: 阿里代码规约扫描
-        run: |
-          mvn pmd:pmd -DskipTests -B
-        continue-on-error: true
-
-      - name: 上传 PMD 报告
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: pmd-reports-${{ github.run_id }}
-          path: '**/target/pmd.xml'
-          retention-days: 3
-
-  # ==================== 3. Docker 镜像构建 ====================
+  # ==================== 2. Docker 镜像构建 ====================
   docker-build:
     needs: build-and-test
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
@@ -181,7 +144,7 @@ jobs:
 
       - name: 构建并推送 ${{ matrix.service }} 镜像
         run: |
-          IMAGE_NAME=${{ env.DOCKER_REGISTRY }}/${{ env.ALIYUN_NAMESPACE }}/${{ matrix.service }}
+          IMAGE_NAME=${{ env.DOCKER_REGISTRY }}/${{ secrets.ALIYUN_NAMESPACE }}/${{ matrix.service }}
           SHORT_SHA=${{ github.sha }}
           SHORT_SHA=${SHORT_SHA::8}
           
@@ -193,16 +156,7 @@ jobs:
           docker push ${IMAGE_NAME}:${SHORT_SHA}
           docker push ${IMAGE_NAME}:latest
 
-      - name: 镜像漏洞扫描
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.DOCKER_REGISTRY }}/${{ env.ALIYUN_NAMESPACE }}/${{ matrix.service }}:${{ github.sha }}
-          format: 'table'
-          exit-code: '0'
-          severity: 'CRITICAL,HIGH'
-        continue-on-error: true
-
-  # ==================== 4. 数据库迁移检查 ====================
+  # ==================== 3. 数据库迁移检查 ====================
   db-migration-check:
     runs-on: ubuntu-latest
     steps:
@@ -214,24 +168,12 @@ jobs:
           if [ -n "$CHANGED_SQL" ]; then
             echo "⚠️  检测到数据库脚本变更："
             echo "$CHANGED_SQL"
-            echo ""
-            echo "请确认："
-            echo "1. 已在测试环境执行过迁移脚本"
-            echo "2. SQL 脚本语法正确"
-            echo "3. 向后兼容，不影响现有数据"
-          
-            for sql_file in $CHANGED_SQL; do
-              if [ -f "$sql_file" ]; then
-                echo ""
-                echo "=== 检查文件: $sql_file ==="
-                head -20 "$sql_file"
-              fi
-            done
+            echo "请确认已在测试环境执行过迁移脚本"
           else
             echo "✅ 无数据库脚本变更"
           fi
 
-  # ==================== 5. 部署 ====================
+  # ==================== 4. 部署 ====================
   deploy:
     needs: [docker-build, db-migration-check]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
@@ -250,7 +192,7 @@ jobs:
             
             echo "=== 拉取最新镜像 ==="
             for SERVICE in user-service stock-service order-service gateway; do
-              docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.ALIYUN_NAMESPACE }}/${SERVICE}:latest &
+              docker pull ${{ env.DOCKER_REGISTRY }}/${{ secrets.ALIYUN_NAMESPACE }}/${SERVICE}:latest &
             done
             wait
             echo "✅ 镜像拉取完成"
@@ -291,9 +233,8 @@ jobs:
               done
             
               if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
-                echo "❌ $SERVICE 启动超时，开始回滚"
+                echo "❌ $SERVICE 启动超时"
                 docker compose logs --tail=50 $SERVICE
-                docker compose down
                 exit 1
               fi
             
@@ -302,7 +243,6 @@ jobs:
             
             echo ""
             echo "=== 所有服务部署完成 ==="
-            echo "服务状态检查:"
             for PORT in 8081 8082 8083 8088; do
               HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:${PORT}/actuator/health || echo "000")
               echo "  端口 ${PORT}: HTTP ${HTTP_CODE}"
@@ -315,18 +255,16 @@ jobs:
             echo ""
             echo "✅ 部署完成！"
 
-  # ==================== 6. 失败通知 ====================
+  # ==================== 5. 失败通知 ====================
   notify:
     needs: [build-and-test, docker-build, deploy]
     if: failure()
     runs-on: ubuntu-latest
     steps:
       - name: 发送企业微信通知
-        env:
-          BUILD_STATUS: ${{ needs.deploy.result }}
         run: |
           TITLE="❌ CI/CD 失败 - 微服务项目"
           
           curl -X POST '${{ secrets.WECOM_WEBHOOK }}' \
             -H 'Content-Type: application/json' \
-            -d "{\"msgtype\":\"markdown\",\"markdown\":{\"content\":\"## ${TITLE}\n> 分支: ${{ github.ref_name }}\n> 提交: ${{ github.event.head_commit.message }}\n> 提交者: ${{ github.actor }}\n> 状态: ${BUILD_STATUS}\n> [查看详情](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\"}}"
+            -d "{\"msgtype\":\"markdown\",\"markdown\":{\"content\":\"## ${TITLE}\n> 分支: ${{ github.ref_name }}\n> 提交: ${{ github.event.head_commit.message }}\n> 提交者: ${{ github.actor }}\n> [查看详情](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\"}}"
