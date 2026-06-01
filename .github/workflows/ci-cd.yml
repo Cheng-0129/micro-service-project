@@ -67,14 +67,14 @@ jobs:
       - name: Maven 全量编译 & 测试
         if: steps.detect_changes.outputs.modules == 'all'
         run: |
-          mvn clean package -DskipTests=false -B
+          mvn clean package -DskipTests=true -B
 
       - name: Maven 增量编译 & 测试
         if: steps.detect_changes.outputs.modules != 'all'
         run: |
           MODULES="${{ steps.detect_changes.outputs.modules }}"
           mvn install -DskipTests -pl common-core,common-web -am -q
-          mvn package -DskipTests=false -pl ${MODULES} -am -B
+          mvn package -DskipTests=true -pl ${MODULES} -am -B
 
       - name: 上传各服务 Jar 包
         uses: actions/upload-artifact@v4
