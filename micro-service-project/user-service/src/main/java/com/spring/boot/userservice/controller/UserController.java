@@ -161,13 +161,6 @@ public class UserController {
 			throw BusinessException.of(FEIGN_ERROR);
 		}
 
-		if (result.isFail()) {
-			log.warn("【用户模块】下单失败，下游返回 code={}, message={}, userId={}, productId={}, num={}",
-					result.getCode(), result.getMsg(),
-					orderCreateFeignDTO.getUserId(), orderCreateFeignDTO.getProductId(), orderCreateFeignDTO.getNum());
-			throw BusinessException.of(result.getCode(), result.getMsg());
-		}
-
 		OrderFeignVO orderFeignVO = result.getData();
 		log.info("【用户模块】下单成功，订单号：{}", orderFeignVO.getOrderNo());
 

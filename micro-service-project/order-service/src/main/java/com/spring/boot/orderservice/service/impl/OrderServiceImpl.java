@@ -107,12 +107,6 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 			throw BusinessException.of(FEIGN_ERROR);
 		}
 
-		if (result.isFail()) {
-			log.warn("【订单模块】扣减库存失败，下游返回 code={}, message={}, 订单号：{}",
-					result.getCode(), result.getMsg(), orderNo);
-			throw BusinessException.of(result.getCode(), result.getMsg());
-		}
-
 		StockDeductFeignVO deductVO = result.getData();
 		log.info("【订单模块】库存扣减成功，productName={}, price={}, 剩余库存={}",
 				deductVO.getProductName(), deductVO.getPrice(), deductVO.getStock());
@@ -206,13 +200,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 					Result<StockAddBackFeignVO> result = stockClient.addBackStock(order.getProductId(), order.getNum());
 					if (result == null || result.getData() == null) {
 						log.error("【订单模块】库存回滚返回结果为 null，订单号：{}", orderNo);
-						throw BusinessException.of(ORDER_ROLLBACK_FAILED);
-					}
-
-					if (result.isFail()) {
-						log.error("【订单模块】库存回滚失败，下游返回 code={}, message={}, 订单号：{}",
-								result.getCode(), result.getMsg(), orderNo);
-						throw BusinessException.of(result.getCode(), result.getMsg());
+						throw BusinessException.of(FEIGN_ERROR);
 					}
 
 					order.setStatus(OrderStatus.CANCELLED.getCode());
@@ -227,13 +215,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 					vo.setOrderNo(orderNo);
 					vo.setUserId(order.getUserId());
 					return vo;
-
-				} catch (BusinessException e) {
-					throw e;
 				} catch (Exception e) {
-					log.error("【订单模块】库存回滚失败，需人工处理！订单号={}, productId={}, num={}",
+					log.error("【订单模块】取消订单异常，需人工处理！订单号={}, productId={}, num={}",
 							orderNo, order.getProductId(), order.getNum(), e);
-					throw BusinessException.of(ORDER_ROLLBACK_FAILED, "库存回滚失败，请人工处理");
+					throw BusinessException.of(ORDER_CANCEL_FAILED, "取消订单失败，请人工处理");
 				}
 
 			case PAID:
@@ -277,12 +262,6 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 			if (result == null || result.getData() == null) {
 				log.warn("【订单模块】用户查询返回结果为 null，userId={}", userId);
 				throw BusinessException.of(FEIGN_ERROR);
-			}
-
-			if (result.isFail()) {
-				log.warn("【订单模块】用户查询失败，下游返回 code={}, message={}, userId={}",
-						result.getCode(), result.getMsg(), userId);
-				throw BusinessException.of(result.getCode(), result.getMsg());
 			}
 			return result.getData();
 		} catch (FeignException e) {

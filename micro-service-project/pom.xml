@@ -34,6 +34,9 @@
         <rocketmq-spring-boot.version>2.3.4</rocketmq-spring-boot.version>
         <rocketmq-client.version>5.3.1</rocketmq-client.version>
         <jjwt.version>0.12.3</jjwt.version>
+        <testcontainers.version>1.19.3</testcontainers.version>
+        <mockito.version>5.8.0</mockito.version>
+        <assertj.version>3.24.2</assertj.version>
 
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
@@ -177,6 +180,53 @@
                 <artifactId>jjwt-jackson</artifactId>
                 <version>${jjwt.version}</version>
             </dependency>
+
+            <!-- 测试依赖 -->
+            <!-- JUnit 5 -->
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>5.10.1</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!-- Mockito -->
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-junit-jupiter</artifactId>
+                <version>${mockito.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!-- AssertJ -->
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>${assertj.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!-- Testcontainers -->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers</artifactId>
+                <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!-- Spring Boot Test -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-test</artifactId>
+                <version>3.2.0</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
@@ -244,9 +294,11 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>3.5.4</version>
+
                     <configuration>
-                        <skipTests>true</skipTests>
+                        <skipTests>false</skipTests>  <!-- ❌ 这行会跳过所有模块的测试！(true时) -->
                     </configuration>
+                    
                 </plugin>
             </plugins>
         </pluginManagement>
