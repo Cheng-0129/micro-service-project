@@ -42,7 +42,7 @@ public enum ResultCode {
 	ORDER_NOT_EXIST(30002, "订单不存在"),
 	ORDER_WAS_CANCELED(30003, "订单已取消"),
 	ORDER_STATUS_ERROR(30004, "订单状态异常"),
-	ORDER_ROLLBACK_FAILED(30005, "订单回滚失败"),
+	ORDER_CANCEL_FAILED(30005, "订单取消失败"),
 	ORDER_SERVICE_DEGRADE(30006, "订单服务繁忙，请稍后重试"),
 	ORDER_SERVICE_RATE_LIMIT(30007, "请求过于频繁，请稍后重试"),
 
