@@ -24,12 +24,6 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: 确认代码目录
-        run: |
-          pwd
-          ls -la
-          ls pom.xml
-
       - name: 设置 JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
         with:
@@ -101,7 +95,7 @@ jobs:
             !*-javadoc.jar
           retention-days: 7
 
-  # ==================== 2. Docker 镜像构建 ====================
+  # ==================== 2. Docker 镜像构建（业务服务） ====================
   docker-build:
     needs: build-and-test
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
@@ -156,7 +150,32 @@ jobs:
           docker push ${IMAGE_NAME}:${SHORT_SHA}
           docker push ${IMAGE_NAME}:latest
 
-  # ==================== 3. 数据库迁移检查 ====================
+  # ==================== 3. 推送基础镜像 ====================
+  push-base-images:
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 登录阿里云镜像仓库
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ secrets.ALIYUN_DOCKER_USERNAME }}
+          password: ${{ secrets.ALIYUN_DOCKER_PASSWORD }}
+
+      - name: 拉取并推送 Nacos 镜像
+        run: |
+          docker pull nacos/nacos-server:v2.4.0
+          docker tag nacos/nacos-server:v2.4.0 ${{ env.DOCKER_REGISTRY }}/${{ secrets.ALIYUN_NAMESPACE }}/nacos-server:v2.4.0
+          docker push ${{ env.DOCKER_REGISTRY }}/${{ secrets.ALIYUN_NAMESPACE }}/nacos-server:v2.4.0
+
+      - name: 拉取并推送 Redis 镜像
+        run: |
+          docker pull redis:7-alpine
+          docker tag redis:7-alpine ${{ env.DOCKER_REGISTRY }}/${{ secrets.ALIYUN_NAMESPACE }}/redis:7-alpine
+          docker push ${{ env.DOCKER_REGISTRY }}/${{ secrets.ALIYUN_NAMESPACE }}/redis:7-alpine
+
+  # ==================== 4. 数据库迁移检查 ====================
   db-migration-check:
     runs-on: ubuntu-latest
     steps:
@@ -173,9 +192,9 @@ jobs:
             echo "✅ 无数据库脚本变更"
           fi
 
-  # ==================== 4. 部署（Self-hosted Runner） ====================
+  # ==================== 5. 部署（Self-hosted Runner） ====================
   deploy:
-    needs: [docker-build, db-migration-check]
+    needs: [docker-build, push-base-images, db-migration-check]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     runs-on: self-hosted
     steps:
@@ -248,7 +267,7 @@ jobs:
           echo ""
           echo "✅ 部署完成！"
 
-  # ==================== 5. 失败通知 ====================
+  # ==================== 6. 失败通知 ====================
   notify:
     needs: [build-and-test, docker-build, deploy]
     if: failure()
