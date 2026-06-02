@@ -2,9 +2,9 @@ spring:
   cloud:
     nacos:
       config:
-        server-addr: 192.168.129.130:8848
+        server-addr: nacos:8848
       discovery:
-        server-addr: 192.168.129.130:8848
+        server-addr: nacos:8848
 
 logging:
   level:
