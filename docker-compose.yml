@@ -40,9 +40,6 @@ services:
       - SPRING_PROFILES_ACTIVE=prod
       - NACOS_SERVER_ADDR=nacos:8848
       - JWT_SECRET=${JWT_SECRET}
-    volumes:
-      - ./config/user-service/application-prod.yml:/app/config/application-prod.yml:ro
-      - ./logs/user-service:/app/logs
     depends_on:
       - nacos
     healthcheck:
@@ -64,9 +61,6 @@ services:
       - SPRING_PROFILES_ACTIVE=prod
       - NACOS_SERVER_ADDR=nacos:8848
       - REDIS_HOST=redis
-    volumes:
-      - ./config/stock-service/application-prod.yml:/app/config/application-prod.yml:ro
-      - ./logs/stock-service:/app/logs
     depends_on:
       - nacos
       - redis
@@ -88,9 +82,6 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - NACOS_SERVER_ADDR=nacos:8848
-    volumes:
-      - ./config/order-service/application-prod.yml:/app/config/application-prod.yml:ro
-      - ./logs/order-service:/app/logs
     depends_on:
       - nacos
     healthcheck:
@@ -111,9 +102,6 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - NACOS_SERVER_ADDR=nacos:8848
-    volumes:
-      - ./config/gateway/application-prod.yml:/app/config/application-prod.yml:ro
-      - ./logs/gateway:/app/logs
     depends_on:
       user-service:
         condition: service_healthy
