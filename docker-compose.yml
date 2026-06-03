@@ -28,6 +28,21 @@ services:
     networks:
       - micro-net
 
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=micro_service_project
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - micro-net
+
   user-service:
     image: crpi-1iszvp3shb05ntyf.cn-hangzhou.personal.cr.aliyuncs.com/city_xing/user-service:latest
     container_name: user-service
@@ -36,13 +51,14 @@ services:
       - "8081:8081"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - NACOS_SERVER_ADDR=nacos:8848
+      - NACOS_ADDR=nacos:8848
       - JWT_SECRET=${JWT_SECRET}
     volumes:
       - ./config/user-service/application-prod.yml:/app/config/application-prod.yml:ro
       - ./logs/user-service:/app/logs
     depends_on:
       - nacos
+      - postgres
     networks:
       - micro-net
 
@@ -54,7 +70,7 @@ services:
       - "8082:8082"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - NACOS_SERVER_ADDR=nacos:8848
+      - NACOS_ADDR=nacos:8848
       - REDIS_HOST=redis
     volumes:
       - ./config/stock-service/application-prod.yml:/app/config/application-prod.yml:ro
@@ -62,6 +78,7 @@ services:
     depends_on:
       - nacos
       - redis
+      - postgres
     networks:
       - micro-net
 
@@ -73,12 +90,13 @@ services:
       - "8083:8083"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - NACOS_SERVER_ADDR=nacos:8848
+      - NACOS_ADDR=nacos:8848
     volumes:
       - ./config/order-service/application-prod.yml:/app/config/application-prod.yml:ro
       - ./logs/order-service:/app/logs
     depends_on:
       - nacos
+      - postgres
     networks:
       - micro-net
 
@@ -90,12 +108,13 @@ services:
       - "8088:8088"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - NACOS_SERVER_ADDR=nacos:8848
+      - NACOS_ADDR=nacos:8848
     volumes:
       - ./config/gateway/application-prod.yml:/app/config/application-prod.yml:ro
       - ./logs/gateway:/app/logs
     depends_on:
       - nacos
+      - redis
     networks:
       - micro-net
 
@@ -105,3 +124,4 @@ networks:
 
 volumes:
   redis-data:
+  postgres-data:

@@ -5,6 +5,8 @@ spring:
         server-addr: nacos:8848
       discovery:
         server-addr: nacos:8848
+  datasource:
+    url: jdbc:postgresql://postgres:5432/micro_service_project
 
 logging:
   level:
