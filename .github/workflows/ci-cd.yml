@@ -228,7 +228,7 @@ jobs:
           if [ -d repo ]; then
             cd repo && git pull
           else
-            git clone --depth 1 -b main https://github.com/Cheng-0129/micro-service-project.git repo
+            git clone --depth 1 -b main git@github.com:Cheng-0129/micro-service-project.git repo
           fi
 
       - name: 同步配置文件
