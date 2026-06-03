@@ -1,11 +1,11 @@
 # Dockerfile（项目根目录）
-FROM eclipse-temurin:17-jre-alpine AS builder
+FROM crpi-1iszvp3shb05ntyf.cn-hangzhou.personal.cr.aliyuncs.com/city_xing/eclipse-temurin:17-jre-alpine AS builder
 WORKDIR /build
 # app.jar 由 CI 流水线从对应服务的 target 目录复制过来
 COPY app.jar app.jar
 RUN java -Djarmode=layertools -jar app.jar extract
 
-FROM eclipse-temurin:17-jre-alpine
+FROM crpi-1iszvp3shb05ntyf.cn-hangzhou.personal.cr.aliyuncs.com/city_xing/eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
 # 设置时区
