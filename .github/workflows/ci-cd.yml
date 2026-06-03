@@ -174,7 +174,7 @@ jobs:
           docker pull redis:7-alpine
           docker tag redis:7-alpine ${{ env.DOCKER_REGISTRY }}/${{ secrets.ALIYUN_NAMESPACE }}/redis:7-alpine
           docker push ${{ env.DOCKER_REGISTRY }}/${{ secrets.ALIYUN_NAMESPACE }}/redis:7-alpine
-          
+
       - name: 拉取并推送 Seata 镜像
         run: |
           docker pull seataio/seata-server:2.0.0
@@ -216,6 +216,9 @@ jobs:
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     runs-on: self-hosted
     steps:
+      - name: 清理工作目录
+        run: rm -rf /home/ubuntu/actions-runner/_work/*
+
       - name: 拉取代码
         uses: actions/checkout@v4
 
@@ -226,6 +229,8 @@ jobs:
           cp order-service/src/main/resources/application-prod.yml /opt/micro-service-project/config/order-service/
           cp gateway/src/main/resources/application-prod.yml /opt/micro-service-project/config/gateway/
           cp docker-compose.yml /opt/micro-service-project/
+          mkdir -p /opt/micro-service-project/sql
+          cp sql/init.sql /opt/micro-service-project/sql/
 
       - name: 部署服务
         run: |
@@ -295,10 +300,6 @@ jobs:
           
           echo ""
           echo "✅ 部署完成！"
-
-      - name: 清理工作目录
-        if: always()
-        run: rm -rf /home/ubuntu/actions-runner/_work/*
 
   # ==================== 6. 失败通知 ====================
   notify:
