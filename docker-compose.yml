@@ -40,6 +40,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - micro-net
 
@@ -109,6 +110,7 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - NACOS_ADDR=nacos:8848
+      - JWT_SECRET=${JWT_SECRET}
     volumes:
       - ./config/gateway/application-prod.yml:/app/config/application-prod.yml:ro
       - ./logs/gateway:/app/logs
