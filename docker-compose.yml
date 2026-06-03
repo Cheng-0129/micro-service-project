@@ -44,6 +44,54 @@ services:
     networks:
       - micro-net
 
+  seata-server:
+    image: seataio/seata-server:2.0.0
+    container_name: seata-server
+    restart: always
+    ports:
+      - "8091:8091"
+      - "7091:7091"
+    environment:
+      - SEATA_PORT=8091
+    volumes:
+      - ./seata/resources:/seata-server/resources
+    networks:
+      - micro-net
+
+  sentinel-dashboard:
+    image: bladex/sentinel-dashboard:1.8.8
+    container_name: sentinel-dashboard
+    restart: always
+    ports:
+      - "8089:8089"
+    networks:
+      - micro-net
+
+  rocketmq-namesrv:
+    image: apache/rocketmq:5.3.1
+    container_name: rocketmq-namesrv
+    restart: always
+    ports:
+      - "9876:9876"
+    command: sh mqnamesrv
+    networks:
+      - micro-net
+
+  rocketmq-broker:
+    image: apache/rocketmq:5.3.1
+    container_name: rocketmq-broker
+    restart: always
+    ports:
+      - "10911:10911"
+      - "10909:10909"
+    environment:
+      - NAMESRV_ADDR=rocketmq-namesrv:9876
+    command: sh mqbroker -n rocketmq-namesrv:9876
+    depends_on:
+      - rocketmq-namesrv
+    networks:
+      - micro-net
+
   user-service:
     image: crpi-1iszvp3shb05ntyf.cn-hangzhou.personal.cr.aliyuncs.com/city_xing/user-service:latest
     container_name: user-service
@@ -73,6 +121,8 @@ services:
       - SPRING_PROFILES_ACTIVE=prod
       - NACOS_ADDR=nacos:8848
       - REDIS_HOST=redis
+      - SEATA_ADDR=seata-server:8091
+      - ROCKETMQ_NAME_SERVER=rocketmq-namesrv:9876
     volumes:
       - ./config/stock-service/application-prod.yml:/app/config/application-prod.yml:ro
       - ./logs/stock-service:/app/logs
@@ -80,6 +130,8 @@ services:
       - nacos
       - redis
       - postgres
+      - seata-server
+      - rocketmq-broker
     networks:
       - micro-net
 
@@ -92,12 +144,16 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - NACOS_ADDR=nacos:8848
+      - SEATA_ADDR=seata-server:8091
+      - ROCKETMQ_NAME_SERVER=rocketmq-namesrv:9876
     volumes:
       - ./config/order-service/application-prod.yml:/app/config/application-prod.yml:ro
       - ./logs/order-service:/app/logs
     depends_on:
       - nacos
       - postgres
+      - seata-server
+      - rocketmq-broker
     networks:
       - micro-net
 
