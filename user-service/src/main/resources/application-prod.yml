@@ -33,3 +33,12 @@ jwt:
   secret: ${JWT_SECRET}
   access-expire: ${JWT_ACCESS_EXPIRE:900000}
   refresh-expire: ${JWT_REFRESH_EXPIRE:604800000}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always

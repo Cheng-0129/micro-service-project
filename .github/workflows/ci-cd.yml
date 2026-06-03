@@ -198,6 +198,13 @@ jobs:
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     runs-on: self-hosted
     steps:
+      - name: 同步配置文件
+        run: |
+          cp user-service/src/main/resources/application-prod.yml /opt/micro-service-project/config/user-service/
+          cp stock-service/src/main/resources/application-prod.yml /opt/micro-service-project/config/stock-service/
+          cp order-service/src/main/resources/application-prod.yml /opt/micro-service-project/config/order-service/
+          cp gateway/src/main/resources/application-prod.yml /opt/micro-service-project/config/gateway/
+          cp docker-compose.yml /opt/micro-service-project/
       - name: 部署服务
         run: |
           cd /opt/micro-service-project
