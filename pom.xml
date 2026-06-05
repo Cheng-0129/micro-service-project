@@ -251,6 +251,15 @@
         </dependency>
     </dependencies>
 
+    <profiles>
+        <profile>
+            <id>integration-test</id>
+            <properties>
+                <spring.profiles.active>integration</spring.profiles.active>
+            </properties>
+        </profile>
+    </profiles>
+
     <build>
         <pluginManagement>
             <plugins>

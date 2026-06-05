@@ -311,7 +311,27 @@ jobs:
           echo ""
           echo "✅ 部署完成！"
 
-  # ==================== 6. 失败通知 ====================
+  # ==================== 6. 集成测试 ====================
+  integration-test:
+    needs: deploy
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    runs-on: self-hosted
+    steps:
+      - name: 拉取代码
+        run: |
+          cd /home/ubuntu
+          if [ -d repo ]; then
+            cd repo && git pull
+          else
+            git clone --depth 1 -b main git@github.com:Cheng-0129/micro-service-project.git repo
+          fi
+
+      - name: 运行集成测试
+        run: |
+          cd /home/ubuntu/repo
+          mvn test -P integration-test -pl user-service,stock-service,order-service -am -B
+
+  # ==================== 7. 失败通知 ====================
   notify:
     needs: [build-and-test, docker-build, deploy]
     if: failure()
