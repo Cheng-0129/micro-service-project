@@ -638,9 +638,9 @@ jwt:
 - [x] 实现 Token 黑名单管理（Redis）
 - [x] 补充常见问题 FAQ
 - [x] 补充数据库建表脚本
-- [ ] 补充部署说明（Docker / Docker Compose）
+- [x] 补充部署说明（Docker / Docker Compose）
 - [ ] 补充单元测试与集成测试
-- [ ] 补充 CI/CD 流水线配置
+- [x] 补充 CI/CD 流水线配置
 - [ ] 补充性能测试报告
 
 ## 📄 License
