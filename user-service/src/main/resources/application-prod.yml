@@ -1,26 +1,32 @@
 spring:
-  datasource:
-    url: jdbc:postgresql://127.0.0.1:5432/micro_service_project
-    username: postgres
-    password: root
-    hikari:
-      initialization-fail-timeout: 30000
-      connection-timeout: 10000
-  data:
-    redis:
-      host: 127.0.0.1
-      port: 6379
   cloud:
     nacos:
-      discovery:
-        server-addr: 127.0.0.1:8848
       config:
-        server-addr: 127.0.0.1:8848
+        server-addr: nacos:8848
+      discovery:
+        server-addr: nacos:8848
+
+logging:
+  level:
+    root: warn
+    com.spring.boot: info
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{50} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"
+  file:
+    name: /app/logs/app.log
+  logback:
+    rolling-policy:
+      max-file-size: 100MB
+      max-history: 7
+
+knife4j:
+  production: true
 
 jwt:
-  secret: integration-test-secret-key-2026-integration
-  access-expire: 900000
-  refresh-expire: 604800000
+  secret: ${JWT_SECRET}
+  access-expire: ${JWT_ACCESS_EXPIRE:900000}
+  refresh-expire: ${JWT_REFRESH_EXPIRE:604800000}
 
 management:
   endpoints:

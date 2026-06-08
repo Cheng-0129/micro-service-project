@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/micro_service_project
+    url: jdbc:postgresql://127.0.0.1:5432/micro_service_project
     username: postgres
     password: root
     hikari:
@@ -8,16 +8,25 @@ spring:
       connection-timeout: 10000
   data:
     redis:
-      host: localhost
+      host: 127.0.0.1
       port: 6379
   cloud:
     nacos:
       discovery:
-        server-addr: localhost:8848
+        server-addr: 127.0.0.1:8848
       config:
-        server-addr: localhost:8848
+        server-addr: 127.0.0.1:8848
 
 jwt:
   secret: integration-test-secret-key-2026-integration
   access-expire: 900000
   refresh-expire: 604800000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
