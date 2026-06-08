@@ -43,11 +43,12 @@ jobs:
         id: detect_changes
         run: |
           CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
-          MODULES=""
+          MODULES="all"
           
           if echo "$CHANGED_FILES" | grep -q "common-core/\|common-web/\|^pom\.xml$"; then
             MODULES="all"
           else
+            MODULES=""
             if echo "$CHANGED_FILES" | grep -q "user-service/"; then
               MODULES="$MODULES,user-service"
             fi
@@ -60,12 +61,10 @@ jobs:
             if echo "$CHANGED_FILES" | grep -q "gateway/"; then
               MODULES="$MODULES,gateway"
             fi
-          fi
-          
-          if [ -z "$MODULES" ]; then
-            MODULES="all"
-          else
             MODULES=${MODULES#,}
+            if [ -z "$MODULES" ]; then
+              MODULES="all"
+            fi
           fi
           
           echo "modules=$MODULES" >> $GITHUB_OUTPUT
