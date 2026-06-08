@@ -60,12 +60,12 @@ jobs:
             if echo "$CHANGED_FILES" | grep -q "gateway/"; then
               MODULES="$MODULES,gateway"
             fi
+          fi
           
-            if [ -z "$MODULES" ]; then
-              MODULES="all"
-            else
-              MODULES=${MODULES#,}
-            fi
+          if [ -z "$MODULES" ]; then
+            MODULES="all"
+          else
+            MODULES=${MODULES#,}
           fi
           
           echo "modules=$MODULES" >> $GITHUB_OUTPUT
