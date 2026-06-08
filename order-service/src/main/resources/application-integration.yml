@@ -1,0 +1,38 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/micro_service_project
+    username: postgres
+    password: root
+    hikari:
+      initialization-fail-timeout: 30000
+      connection-timeout: 10000
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+      config:
+        server-addr: localhost:8848
+
+jwt:
+  secret: integration-test-secret-key-2026-integration
+  access-expire: 900000
+  refresh-expire: 604800000
+
+seata:
+  registry:
+    type: nacos
+    nacos:
+      server-addr: localhost:8848
+  tx-service-group: my_micro_service_group
+  service:
+    vgroup-mapping:
+      my_micro_service_group: default
+    grouplist:
+      default: localhost:8091
+
+rocketmq:
+  name-server: localhost:9876
