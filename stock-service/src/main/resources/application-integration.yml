@@ -15,7 +15,7 @@ spring:
         server-addr: localhost:8848
 
 jwt:
-  secret: integration-test-secret
+  secret: integration-test-secret-key-2026-integration
   access-expire: 900000
   refresh-expire: 604800000
 
