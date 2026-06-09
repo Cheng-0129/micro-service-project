@@ -263,6 +263,7 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
+                            <argLine>@{argLine}</argLine>
                             <includes>
                                 <include>**/*IntegrationTest.java</include>
                             </includes>
@@ -296,7 +297,7 @@
                         <source>${java.version}</source>
                         <target>${java.version}</target>
                         <release>${maven.compiler.release}</release>
-                        <parameters>true</parameters>
+                        <parameters>true</parameters>  <!-- 保留方法参数名，对 Spring MVC 有用 -->
                         <annotationProcessorPaths>
                             <path>
                                 <groupId>org.projectlombok</groupId>
@@ -321,6 +322,7 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>3.5.4</version>
                     <configuration>
+                        <argLine>@{argLine}</argLine>
                         <excludes>
                             <exclude>**/*IntegrationTest.java</exclude>
                         </excludes>
