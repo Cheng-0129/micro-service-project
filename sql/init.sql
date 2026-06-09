@@ -56,3 +56,15 @@ CREATE TABLE t_nonce_record (
                                 create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX idx_nonce_expire ON t_nonce_record(expire_time);
+
+-- 业务ID生成器表
+CREATE TABLE biz_id_counter (
+                                id BIGSERIAL PRIMARY KEY,
+                                table_name VARCHAR(50) NOT NULL UNIQUE,
+                                current_max_id BIGINT NOT NULL DEFAULT 0
+);
+
+-- 初始化三个业务表的起始 ID
+INSERT INTO biz_id_counter (table_name, current_max_id) VALUES ('t_user', 10000);
+INSERT INTO biz_id_counter (table_name, current_max_id) VALUES ('t_order', 10000);
+INSERT INTO biz_id_counter (table_name, current_max_id) VALUES ('t_stock', 10000);
