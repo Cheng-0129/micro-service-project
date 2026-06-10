@@ -29,7 +29,7 @@
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\"name\":\"ptest\",\"password\":\"123456\",\"age\":20,\"email\":\"ptest@test.com\"}",
+          "raw": "{\"name\":\"{{randomUser}}\",\"password\":\"123456\",\"age\":20,\"email\":\"{{randomUser}}@test.com\"}",
           "options": {
             "raw": {
               "language": "json"
@@ -64,7 +64,10 @@
               "\r",
               "// 保存 token 到环境变量\r",
               "var token = pm.response.json().data.accessToken;\r",
-              "pm.collectionVariables.set(\"ACCESS_TOKEN\", token);"
+              "pm.collectionVariables.set(\"ACCESS_TOKEN\", token);\r",
+              "\r",
+              "var userId = pm.response.json().data.userId;\r",
+              "pm.collectionVariables.set(\"USER_ID\", userId);"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -77,7 +80,7 @@
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\"username\":\"ptest\",\"password\":\"123456\"}",
+          "raw": "{\"username\":\"{{randomUser}}\",\"password\":\"123456\"}",
           "options": {
             "raw": {
               "language": "json"
@@ -168,6 +171,13 @@
             "packages": {},
             "requests": {}
           }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "packages": {},
+            "type": "text/javascript"
+          }
         }
       ],
       "request": {
@@ -185,7 +195,7 @@
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\"userId\":1,\"productId\":1,\"num\":5}",
+          "raw": "{\"userId\":{{USER_ID}},\"productId\":1,\"num\":5}",
           "options": {
             "raw": {
               "language": "json"
@@ -348,7 +358,9 @@
         "packages": {},
         "requests": {},
         "exec": [
-          ""
+          "if (!pm.collectionVariables.get(\"randomUser\")) {\r",
+          "    pm.collectionVariables.set(\"randomUser\", \"u\" + Math.random().toString(36).substring(2, 9));\r",
+          "}"
         ]
       }
     },
@@ -375,6 +387,10 @@
     },
     {
       "key": "ORDER_NO",
+      "value": ""
+    },
+    {
+      "key": "USER_ID",
       "value": ""
     }
   ]
