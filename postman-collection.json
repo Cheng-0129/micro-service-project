@@ -1,0 +1,381 @@
+{
+  "info": {
+    "_postman_id": "ac30220b-0cd5-4613-8cf0-f5e2a22c9c87",
+    "name": "微服务接口测试",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "53327819",
+    "_collection_link": "https://go.postman.co/collection/53327819-ac30220b-0cd5-4613-8cf0-f5e2a22c9c87?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "注册",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"code=0\", () => { \r",
+              "    pm.expect(pm.response.json().code).to.eql(0); \r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\":\"ptest\",\"password\":\"123456\",\"age\":20,\"email\":\"ptest@test.com\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/user-service/user/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "user-service",
+            "user",
+            "register"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "登录",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// 断言响应code=0\r",
+              "pm.test(\"code=0\", () => { \r",
+              "    pm.expect(pm.response.json().code).to.eql(0); \r",
+              "});\r",
+              "\r",
+              "// 保存 token 到环境变量\r",
+              "var token = pm.response.json().data.accessToken;\r",
+              "pm.collectionVariables.set(\"ACCESS_TOKEN\", token);"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"username\":\"ptest\",\"password\":\"123456\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/user-service/user/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "user-service",
+            "user",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "新增库存",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"code=0\", () => { \r",
+              "    pm.expect(pm.response.json().code).to.eql(0); \r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{ACCESS_TOKEN}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"productName\":\"测试商品\",\"stock\":100,\"price\":99.99}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/stock-service/stock/add",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "stock-service",
+            "stock",
+            "add"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "创建订单",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"code=0\", () => { \r",
+              "    pm.expect(pm.response.json().code).to.eql(0); \r",
+              "});\r",
+              "var orderNo = pm.response.json().data.orderNo;\r",
+              "pm.collectionVariables.set(\"ORDER_NO\", orderNo);"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{ACCESS_TOKEN}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"userId\":1,\"productId\":1,\"num\":5}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/order-service/order/create",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "order-service",
+            "order",
+            "create"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "查询订单",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"code=0\", () => { \r",
+              "    pm.expect(pm.response.json().code).to.eql(0); \r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{ACCESS_TOKEN}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/order-service/order/{{ORDER_NO}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "order-service",
+            "order",
+            "{{ORDER_NO}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "取消订单",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"code=0\", () => { \r",
+              "    pm.expect(pm.response.json().code).to.eql(0); \r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{ACCESS_TOKEN}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/order-service/order/cancel/{{ORDER_NO}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "order-service",
+            "order",
+            "cancel",
+            "{{ORDER_NO}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "查询库存",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"code=0\", () => { \r",
+              "    pm.expect(pm.response.json().code).to.eql(0); \r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{ACCESS_TOKEN}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/stock-service/stock/1",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "stock-service",
+            "stock",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://192.168.129.130:8088"
+    },
+    {
+      "key": "ACCESS_TOKEN",
+      "value": ""
+    },
+    {
+      "key": "ORDER_NO",
+      "value": ""
+    }
+  ]
+}
