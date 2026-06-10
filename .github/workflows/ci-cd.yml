@@ -73,13 +73,15 @@ jobs:
       - name: Maven 全量编译
         if: steps.detect_changes.outputs.modules == 'all'
         run: |
-          mvn clean package -DskipTests=false -B
+          mvn clean test jacoco:report -B
+          mvn package -DskipTests=true -B
 
       - name: Maven 增量编译
         if: steps.detect_changes.outputs.modules != 'all'
         run: |
           MODULES="${{ steps.detect_changes.outputs.modules }}"
-          mvn clean package -DskipTests=false -pl ${MODULES} -am -B
+          mvn clean test jacoco:report -pl ${MODULES} -am -B
+          mvn package -DskipTests=true -pl ${MODULES} -am -B
 
       - name: 上传覆盖率报告
         if: always()
@@ -261,7 +263,7 @@ jobs:
           echo "✅ 镜像拉取完成"
           
           echo "=== 重启基础设施 ==="
-          docker compose up -d nacos redis
+          docker compose up -d nacos redis postgres
           sleep 15
           
           echo "=== 按顺序重启业务服务 ==="
