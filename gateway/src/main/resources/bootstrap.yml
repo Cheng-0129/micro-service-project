@@ -19,4 +19,4 @@ spring:
       # 服务发现
       discovery:
         server-addr: ${NACOS_ADDR:127.0.0.1:8848}
-        ip: ${NACOS_DISCOVERY_IP:127.0.0.1}          # ← 加这行，注册到 Nacos 的 IP 改成 localhost
+        ip: ${NACOS_DISCOVERY_IP:}          # ← 加这行，注册到 Nacos 的 IP 改成 localhost
