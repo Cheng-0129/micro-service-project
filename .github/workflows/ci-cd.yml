@@ -348,7 +348,8 @@ jobs:
       - name: 运行 API 测试
         run: |
           cd /home/ubuntu/repo
-          which newman || sudo npm install -g newman
+          export PATH="$HOME/.npm-global/bin:$PATH"
+          which newman || (sudo apt install -y npm && npm install -g newman --prefix ~/.npm-global)
           newman run postman-collection.json --reporters cli
 
   # ==================== 8. 失败通知 ====================
