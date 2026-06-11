@@ -54,6 +54,8 @@ services:
     environment:
       - SEATA_PORT=8091
       - logging.file.path=/root/logs/seata
+      - SEATA_CONSOLE_USERNAME=seata
+      - SEATA_CONSOLE_PASSWORD=seata
     volumes:
       - ./seata/logs:/root/logs/seata
       - ./seata/application.yml:/seata-server/resources/application.yml
