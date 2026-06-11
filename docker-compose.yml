@@ -56,7 +56,7 @@ services:
       - logging.file.path=/root/logs/seata
     volumes:
       - ./seata/logs:/root/logs/seata
-      - ./seata/registry.conf:/seata-server/resources/registry.conf
+      - ./seata/application.yml:/seata-server/resources/application.yml
     networks:
       - micro-net
 
