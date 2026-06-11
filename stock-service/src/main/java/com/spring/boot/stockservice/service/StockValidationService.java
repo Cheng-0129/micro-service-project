@@ -37,7 +37,7 @@ public class StockValidationService {
 	@Resource
 	private StockConvertMapper stockConvertMapper;
 
-	public void addStock(StockCreateDTO VO) {
+	public StockVO addStock(StockCreateDTO VO) {
 
 		log.info("【校验层】开始新增库存，请求参数：stock={}", VO);
 
@@ -51,6 +51,8 @@ public class StockValidationService {
 
 		log.info("【校验层】新增成功，productId={}, productName={}",
 				created.getProductId(), created.getProductName());
+
+		return stockConvertMapper.toStockVO(created);
 	}
 
 	public StockVO getStockByProductId(Long productId) {
