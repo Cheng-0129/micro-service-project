@@ -53,8 +53,9 @@ services:
       - "7091:7091"
     environment:
       - SEATA_PORT=8091
+      - logging.file.path=/root/logs/seata
     volumes:
-      - ./seata/resources:/seata-server/resources
+      - ./seata/logs:/root/logs/seata
     networks:
       - micro-net
 
