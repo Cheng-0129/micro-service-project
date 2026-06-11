@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
  * @author Chi Shoucheng
  * @datetime 2026/5/14 09:14
  */
-@FeignClient(name = "user-service", url = "http://127.0.0.1:8081")
+@FeignClient(name = "user-service")
 public interface UserClient {
 
 	@GetMapping("/user/get/{id}")

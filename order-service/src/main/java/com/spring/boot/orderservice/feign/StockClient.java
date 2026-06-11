@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
  * @author Chi Shoucheng
  * @datetime 2026/4/30 14:40
  */
-@FeignClient(name = "stock-service", url = "http://127.0.0.1:8082")
+@FeignClient(name = "stock-service")
 public interface StockClient {
 
 	@PostMapping("/stock/deduct")
