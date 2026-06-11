@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
  * @author Chi Shoucheng
  * @datetime 2026/5/6 08:32
  */
-@FeignClient(name = "order-service", url = "http://127.0.0.1:8083")
+@FeignClient(name = "order-service")
 public interface OrderClient {
 
 	@PostMapping("/order/create")
