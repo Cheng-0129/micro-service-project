@@ -37,14 +37,14 @@ public class StockController {
 	StockValidationService stockValidationService;
 
 	@Operation(summary = "新增库存",
-			description = "创建商品库存记录，成功返回操作成功，失败返回 20001（库存添加失败）")
+			description = "创建商品库存记录，成功返回新增库存信息，失败返回 20001（库存添加失败）")
 	@PostMapping("/add")
-	public Result<Void> addStock(@RequestBody @Valid StockCreateDTO stock) {
+	public Result<StockVO> addStock(@RequestBody @Valid StockCreateDTO stock) {
 
 		log.info("【库存模块】新增库存信息，请求参数：stock={}", stock);
-		stockValidationService.addStock(stock);
-		log.info("【库存模块】新增库存信息成功，stock={}", stock);
-		return Result.success("库存新增成功");
+		StockVO stockVO = stockValidationService.addStock(stock);
+		log.info("【库存模块】新增库存信息成功，stockVO={}", stockVO);
+		return Result.success(stockVO, "库存新增成功");
 	}
 
 	@Operation(summary = "查询库存",
