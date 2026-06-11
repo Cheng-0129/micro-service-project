@@ -57,7 +57,8 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
 			"/**/v3/api-docs/**",
 			"/**/swagger-resources/**",
 			"/**/swagger-ui/**",
-			"/**/swagger-ui.html"
+			"/**/swagger-ui.html",
+			"/**/swagger-config"
 	);
 
 	@Override
