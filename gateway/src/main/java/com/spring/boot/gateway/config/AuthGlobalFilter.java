@@ -25,7 +25,15 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- *
+ * 网关全局认证过滤器
+ * <p>
+ * 负责对所有经过网关的请求进行统一鉴权处理：
+ * 1. 记录请求日志（路径、方法、来源IP）
+ * 2. 处理跨域预检请求（OPTIONS）
+ * 3. 放行白名单路径（无需认证）
+ * 4. 验证JWT Token的有效性（缺失、黑名单、过期等）
+ * 5. 将解析出的用户ID传递给下游微服务
+ * 6. 记录响应日志（耗时、状态码）
  *
  * @author Chi Shoucheng
  * @datetime 2026/5/9 11:30
@@ -35,30 +43,41 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AuthGlobalFilter implements GlobalFilter, Ordered {
 
+	// Ant风格路径匹配器，用于白名单路径匹配（支持通配符如 /**）
 	private final AntPathMatcher pathMatcher = new AntPathMatcher();
+
+	// Jackson对象映射器，用于将Result对象序列化为JSON字节数组
 	private final ObjectMapper objectMapper;
 
+	// JWT工具类，用于Token的解析和验证
 	@Autowired
 	private JwtUtil jwtUtil;
 
 
 	/**
-	 * 白名单路径，不需要鉴权
+	 * 白名单路径列表
+	 * <p>
+	 * 这些路径不需要进行JWT认证，直接放行：
+	 * - 用户登录、注册、登出、Token刷新接口
+	 * - Swagger/Knife4j 接口文档相关资源
+	 * - 静态资源文件
 	 */
 	private static final List<String> WHITE_LIST = List.of(
-			"/user-service/user/login",
-			"/user-service/user/register",
-			"/user-service/user/logout",
-			"/user-service/user/refresh",
-			"/doc.html",
-			"/webjars/**",
-			"/favicon.ico",
-			// Swagger/Knife4j - 无论哪个服务前缀都放行
-			"/**/v3/api-docs/**",
-			"/**/swagger-resources/**",
-			"/**/swagger-ui/**",
-			"/**/swagger-ui.html",
-			"/**/swagger-config"
+			// 用户服务接口
+			"/user-service/user/login",      // 用户登录
+			"/user-service/user/register",   // 用户注册
+			"/user-service/user/logout",     // 用户登出
+			"/user-service/user/refresh",    // Token刷新
+			// Knife4j/Swagger 文档资源
+			"/doc.html",                     // Knife4j文档页面
+			"/webjars/**",                   // Webjars静态资源
+			"/favicon.ico",                  // 网站图标
+			// Swagger/Knife4j API文档 - 无论哪个服务前缀都放行
+			"/**/v3/api-docs/**",            // OpenAPI文档接口
+			"/**/swagger-resources/**",      // Swagger资源配置
+			"/**/swagger-ui/**",             // Swagger UI界面资源
+			"/**/swagger-ui.html",           // Swagger UI页面
+			"/**/swagger-config"             // Swagger配置接口
 	);
 
 	@Override
