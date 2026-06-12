@@ -9,6 +9,11 @@ logging:
   file:
     path: /root/logs/seata
 
+console:
+  user:
+    username: seata
+    password: seata
+
 seata:
   config:
     type: nacos
@@ -16,8 +21,6 @@ seata:
       server-addr: nacos:8848
       namespace:
       group: DEFAULT_GROUP
-      username: nacos
-      password: nacos
   registry:
     type: nacos
     nacos:
@@ -25,7 +28,10 @@ seata:
       server-addr: nacos:8848
       namespace:
       group: DEFAULT_GROUP
-      username: nacos
-      password: nacos
   server:
     service-port: 8091
+  security:
+    secretKey: seata-secret-key-2026
+    tokenValidityInMilliseconds: 1800000
+    ignore:
+      urls: /,/**/*.css,/**/*.js,/**/*.html,/**/*.ico
