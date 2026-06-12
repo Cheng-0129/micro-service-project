@@ -81,12 +81,17 @@ jobs:
             cp Dockerfile docker-context/${{ matrix.service }}/
           fi
           
-          find jars/ -name "*.jar" -path "*${{ matrix.service }}*" ! -name "*sources*" ! -name "*javadoc*" -exec cp {} docker-context/${{ matrix.service }}/app.jar \;
-          
-          if [ ! -f docker-context/${{ matrix.service }}/app.jar ]; then
+          # 关键修复：精确匹配 jar 包，避免多个 jar 时出错
+          JAR_FILE=$(find jars/ -name "${{ matrix.service }}*.jar" ! -name "*sources*" ! -name "*javadoc*" | head -1)
+          if [ -z "$JAR_FILE" ]; then
             echo "错误: 未找到 ${{ matrix.service }} 的 jar 包"
+            find jars/ -name "*.jar"
             exit 1
           fi
+          cp "$JAR_FILE" docker-context/${{ matrix.service }}/app.jar
+          
+          echo "=== 构建上下文 ==="
+          ls -la docker-context/${{ matrix.service }}/
 
       - name: 登录阿里云镜像仓库
         uses: docker/login-action@v3
@@ -108,6 +113,8 @@ jobs:
           
           docker push ${IMAGE_NAME}:${SHORT_SHA}
           docker push ${IMAGE_NAME}:latest
+          
+          echo "✅ ${{ matrix.service }} 镜像推送完成: ${IMAGE_NAME}:${SHORT_SHA}"
 
   # ==================== 3. 推送基础镜像 ====================
   push-base-images:
@@ -205,18 +212,11 @@ jobs:
         run: |
           cd /opt/micro-service-project
           
-          echo "=== 拉取最新镜像 ==="
-          for SERVICE in user-service stock-service order-service gateway; do
-            docker pull ${{ env.DOCKER_REGISTRY }}/${{ secrets.ALIYUN_NAMESPACE }}/${SERVICE}:latest &
-          done
-          wait
-          echo "✅ 镜像拉取完成"
-          
           echo "=== 重启基础设施 ==="
           docker compose up -d nacos redis postgres
           sleep 15
           
-          echo "=== 按顺序重启业务服务 ==="
+          echo "=== 按顺序部署业务服务 ==="
           
           SERVICES=("user-service" "stock-service" "order-service" "gateway")
           PORTS=(8081 8082 8083 8088)
@@ -228,7 +228,9 @@ jobs:
             echo ""
             echo ">>> 部署 $SERVICE (端口: $PORT)"
           
-            docker compose up -d $SERVICE
+            # 关键修复：先拉新镜像，再强制重建
+            docker compose pull $SERVICE
+            docker compose up -d --force-recreate $SERVICE
           
             echo "等待 $SERVICE 启动..."
             MAX_RETRIES=30
