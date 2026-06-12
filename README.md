@@ -29,6 +29,7 @@
 - 🚫 **Token 黑名单**：基于 Redis 的 Token 黑名单机制，支持即时登出与安全注销
 
 ### 🔄 业务链路
+
 ```
 用户请求 → 网关(8088) → 用户服务(8081) → Feign → 订单服务(8083)
                                                     ↓
@@ -89,11 +90,11 @@
 - **Maven**：3.6+（推荐 3.8.x 或 3.9.x）
 - **数据库**：PostgreSQL 15+
 - **中间件**：
-    - Nacos 3.2.0（注册中心 + 配置中心）
-    - Redis 5.0.14.1+（缓存）
-    - Seata 2.0.0（分布式事务）
-    - RocketMQ 5.3.1+（消息队列，可选）
-    - Sentinel Dashboard 1.8.8+（流量监控，可选）
+  - Nacos 3.2.0（注册中心 + 配置中心）
+  - Redis 5.0.14.1+（缓存）
+  - Seata 2.0.0（分布式事务）
+  - RocketMQ 5.3.1+（消息队列，可选）
+  - Sentinel Dashboard 1.8.8+（流量监控，可选）
 
 > ⚠️ **版本兼容性说明**：
 > - Spring Boot 3.x 需要 JDK 17+，不支持 JDK 8/11
@@ -104,7 +105,7 @@
 ### 2️⃣ 克隆项目
 
 ```bash
-git clone https://gitee.com/city_xing/micro_service_project.git
+git clone https://github.com/Cheng-0129/micro-service-project.git
 cd micro-service-project
 ```
 
@@ -202,6 +203,7 @@ mvn spring-boot:run -pl order-service
 # 终端4：启动网关（最后启动，等待子服务注册完成）
 mvn spring-boot:run -pl gateway
 ```
+
 > ⚠️ **注意**：网关必须最后启动，确保所有子服务已成功注册到 Nacos。
 
 ### 8️⃣ 验证服务
@@ -212,6 +214,7 @@ mvn spring-boot:run -pl gateway
 2. **访问接口文档**：`http://localhost:8088/doc.html`
 3. **查看 Sentinel 控制台**（如已启动）：`http://localhost:8089`
 4. **测试登录注册接口**：
+
 ```bash
 # 注册用户
 curl -X POST http://localhost:8088/user-service/user/register \
@@ -223,7 +226,9 @@ curl -X POST http://localhost:8088/user-service/user/login \
   -H "Content-Type: application/json" \
   -d '{"username":"test","password":"123456"}'
 ```
+
 5. **完整业务流程测试**：
+
 ```bash
 # ① 登录获取 Token
 RESPONSE=$(curl -s -X POST http://localhost:8088/user-service/user/login \
@@ -245,9 +250,11 @@ curl -X POST http://localhost:8088/user-service/user/logout \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "X-Refresh-Token: $REFRESH_TOKEN"
 ```
+
 > 💡 **提示**：以上命令需要安装 `jq` 工具用于解析 JSON。Windows 用户可使用 Git Bash 或 WSL 执行。
 
 ## 📁 项目结构与模块说明
+
 ```
 micro-service-project/
 │
@@ -311,6 +318,7 @@ micro-service-project/
 
 ### 📐 统一分层架构
 各业务模块（user-service、stock-service、order-service）采用统一分层：
+
 ```
 {service}/src/main/java/com/spring/boot/{service}/
     ├── config/           # 配置类（Jackson、MyBatis-Plus、线程池等）
@@ -322,6 +330,7 @@ micro-service-project/
     ├── service/          # 业务逻辑层（接口 + impl 实现）
     └── vo/               # 视图对象（返回前端数据）
 ```
+
 > 💡 **示例**：user-service/src/main/java/com/spring/boot/userservice/
 
 ### 🔀 模块差异说明
@@ -377,9 +386,9 @@ micro-service-project/
 - **Token 验证**：网关层统一校验 Token 有效性及黑名单状态
 - **用户信息透传**：验证通过后，网关将用户ID写入请求头 `X-UserId`，下游服务直接读取
 - **鉴权失败响应**：HTTP 401 + 统一 JSON 响应体
-    - `GATEWAY_TOKEN_MISSING`：缺少 Token
-    - `GATEWAY_TOKEN_EXPIRED`：Token 无效或过期
-    - `GATEWAY_TOKEN_BLACKLISTED`：Token 已在黑名单中
+  - `GATEWAY_TOKEN_MISSING`：缺少 Token
+  - `GATEWAY_TOKEN_EXPIRED`：Token 无效或过期
+  - `GATEWAY_TOKEN_BLACKLISTED`：Token 已在黑名单中
 
 #### Token 生命周期管理
 
@@ -395,9 +404,9 @@ micro-service-project/
 - **Key 格式**：`blacklist:<token>`
 - **过期时间**：自动与 Token 剩余有效期同步
 - **应用场景**：
-    - 用户主动登出：将 Access Token 加入黑名单
-    - 注销所有设备：将所有活跃 Token 加入黑名单
-    - 刷新 Token：旧的 Refresh Token 立即失效
+  - 用户主动登出：将 Access Token 加入黑名单
+  - 注销所有设备：将所有活跃 Token 加入黑名单
+  - 刷新 Token：旧的 Refresh Token 立即失效
 
 > 💡 **注意**：`/user-service/user/logout` 在白名单中是为了遵循 OAuth2.0 最佳实践，允许用户在 Token 即将过期时仍能正常登出。实际的 Token 有效性由网关层的黑名单机制保证。
 
@@ -462,9 +471,11 @@ graph TB
     style E fill:#99ccff
     style G fill:#99ff99
 ```
+
 ### 调用链路详解
 
 1. **用户下单流程**：
+
    ```
    前端 → 网关 → user-service.order() → Feign → order-service.createOrder()
                                           ↓
@@ -475,6 +486,7 @@ graph TB
                                    RocketMQ 发送订单创建消息
    ```
 2. **用户取消订单流程**：
+
    ```
    前端 → 网关 → order-service.cancelOrder()
                                           ↓
@@ -485,6 +497,7 @@ graph TB
                                    RocketMQ 发送订单取消消息
    ```
 3. **库存缓存清除流程**：
+
    ```
    RocketMQ 消息 → stock-service.OrderMessageConsumer → 清除 Redis 缓存
    ```
@@ -514,6 +527,7 @@ graph TB
   }
 ]
 ```
+
 ### 业务层熔断降级
 
 各子服务通过 `@SentinelResource` 接入熔断降级：
@@ -572,11 +586,45 @@ graph TB
 ```
 http://localhost:8088/doc.html
 ```
+
 Knife4j 自动聚合所有微服务的 Swagger 文档，支持：
 - 📖 在线浏览接口文档
 - 🧪 接口在线调试
 - 📥 导出 Markdown/HTML 文档
 - 🔄 实时更新（服务重启后自动刷新）
+
+### 🔒 生产环境文档开关
+
+出于安全考虑，**生产环境默认关闭 API 文档**。如需临时开启，按以下步骤操作：
+
+#### 开启文档
+在 Nacos 控制台（`http://你的IP:8848/nacos`，示例 `http://192.168.129.130:8848/nacos`）的 **配置管理 → 配置列表** 中找到 `common-config.yaml`，编辑添加以下配置并发布：
+
+```yaml
+knife4j:
+  production: false
+
+springdoc:
+  api-docs:
+    enabled: true
+```
+
+然后重启三个业务服务（user-service、stock-service、order-service），文档即可访问。
+
+#### 关闭文档
+在 Nacos 的 `common-config.yaml` 中改为：
+
+```yaml
+knife4j:
+  production: true
+```
+
+发布后重启业务服务即可关闭。
+
+> ⚠️ 注意：
+> 修改 Nacos 配置后必须重启业务服务才能生效，不会自动热更新
+> 网关不需要添加此配置，网关只负责聚合文档
+> 生产环境建议用完即关，避免暴露接口信息
 
 ## 📋 错误码规范
 
@@ -599,6 +647,7 @@ Knife4j 自动聚合所有微服务的 Swagger 文档，支持：
 
 ### Q3: 如何修改 Token 有效期？
 **A**: 在 `user-service/application-*.yml` 中修改：
+
 ```yaml
 jwt:
   access-expire: 900000 # Access Token 有效期（毫秒）
@@ -626,6 +675,61 @@ jwt:
 
 ### Q7: 防重放攻击机制如何测试？
 **A**: 使用相同参数快速重复请求标注了 `@PreventReplay` 的接口，第二次请求会被拒绝。
+
+### Q8: 部署后服务启动异常，有哪些需要手动检查的？
+**A**: 首次部署或重建环境时，以下操作需要在虚拟机上手动执行一次：
+
+#### 1. 数据库建表
+PostgreSQL 容器首次启动后，需要手动执行初始化 SQL 建表：
+
+```bash
+docker exec -i postgres psql -U postgres -d micro_service_project < /opt/micro-service-project/sql/init.sql
+```
+
+#### 2. Seata 配置文件
+确保 `/opt/micro-service-project/seata/application.yml` 配置正确，关键配置如下：
+
+```yaml
+seata:
+  config:
+    type: nacos
+    nacos:
+      server-addr: nacos:8848
+      group: DEFAULT_GROUP
+  registry:
+    type: nacos
+    nacos:
+      application: seata-server
+      server-addr: nacos:8848
+      group: DEFAULT_GROUP
+```
+> 💡 **注意**：Nacos 未开启认证时，不要配置 username 和 password，否则 Seata 启动会失败。
+
+重建后重启 Seata：
+
+```bash
+docker-compose restart seata-server
+```
+
+#### 3. Self-hosted Runner 首次注册
+虚拟机上的 GitHub Actions Runner 首次使用需要手动注册：
+- 在 GitHub 仓库 Settings > Actions > Runners 页面获取 Token
+- 按页面指引在虚拟机上完成注册
+- 注册后 Runner 会作为系统服务自动启动，虚拟机重启后也会自动运行
+
+#### 4. 阿里云镜像仓库登录
+首次部署时需确保虚拟机能拉取阿里云容器镜像仓库的镜像：
+
+```bash
+docker login --username=<你的阿里云账号> crpi-1iszvp3shb05ntyf.cn-hangzhou.personal.cr.aliyuncs.com
+```
+
+### Q9: 生产环境访问 doc.html 提示"文档请求异常"或"Knife4j 文档请求异常"？
+**A**: 生产环境默认关闭了 API 文档。
+1. 检查 Nacos 中 `common-config.yaml` 是否配置了 `knife4j.production: true`
+2. 如需临时开启，将 `knife4j.production` 改为 `false`，同时添加 `springdoc.api-docs.enabled: true`
+3. 发布配置后**重启业务服务**（网关不需要重启）
+4. 使用完毕后建议改回 `production: true` 并重启服务，避免接口信息泄露
 
 ## ✅ 待办事项
 
@@ -657,7 +761,7 @@ MIT License © 2026 Chi Shoucheng
 4. 推送到分支 (`git push origin feature/AmazingFeature`)
 5. 开启 Pull Request
 
-📧 联系方式：1017191272@qq.com | [city_xing](https://gitee.com/city_xing)
+📧 联系方式：1017191272@qq.com | [Cheng-0129](https://github.com/Cheng-0129)
 
 ## 🙏 致谢
 

@@ -20,9 +20,6 @@ logging:
       max-file-size: 100MB
       max-history: 7
 
-knife4j:
-  production: false
-
 jwt:
   secret: ${JWT_SECRET}
 
