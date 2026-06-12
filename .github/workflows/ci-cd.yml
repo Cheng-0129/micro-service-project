@@ -137,9 +137,9 @@ jobs:
 
       - name: 拉取并推送 Nacos 镜像
         run: |
-          docker pull nacos/nacos-server:v2.4.0
-          docker tag nacos/nacos-server:v2.4.0 ${{ env.DOCKER_REGISTRY }}/${{ secrets.ALIYUN_NAMESPACE }}/nacos-server:v2.4.0
-          docker push ${{ env.DOCKER_REGISTRY }}/${{ secrets.ALIYUN_NAMESPACE }}/nacos-server:v2.4.0
+          docker pull nacos/nacos-server:v3.2.0
+          docker tag nacos/nacos-server:v3.2.0 ${{ env.DOCKER_REGISTRY }}/${{ secrets.ALIYUN_NAMESPACE }}/nacos-server:v3.2.0
+          docker push ${{ env.DOCKER_REGISTRY }}/${{ secrets.ALIYUN_NAMESPACE }}/nacos-server:v3.2.0
 
       - name: 拉取并推送 Redis 镜像
         run: |
@@ -290,7 +290,7 @@ jobs:
       - name: 运行集成测试
         run: |
           cd /home/ubuntu/repo
-          mvn test -P integration-test -pl user-service,stock-service,order-service -am -B
+          mvn verify -P integration-test -pl user-service,stock-service,order-service -am -B
 
   # ==================== 7. API 冒烟测试 ====================
   api-test:

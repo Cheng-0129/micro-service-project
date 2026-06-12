@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   nacos:
-    image: crpi-1iszvp3shb05ntyf.cn-hangzhou.personal.cr.aliyuncs.com/city_xing/nacos-server:v2.4.0
+    image: crpi-1iszvp3shb05ntyf.cn-hangzhou.personal.cr.aliyuncs.com/city_xing/nacos-server:v3.2.0
     container_name: nacos
     restart: always
     environment:
@@ -35,7 +35,7 @@ services:
     restart: always
     environment:
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=root
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-root}
       - POSTGRES_DB=micro_service_project
     ports:
       - "5432:5432"
