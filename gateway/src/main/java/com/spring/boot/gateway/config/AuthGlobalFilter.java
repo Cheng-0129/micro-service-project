@@ -72,12 +72,13 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
 			"/doc.html",                     // Knife4j文档页面
 			"/webjars/**",                   // Webjars静态资源
 			"/favicon.ico",                  // 网站图标
-			// Swagger/Knife4j API文档 - 无论哪个服务前缀都放行
+			// API 文档接口 - 覆盖所有服务前缀和子路径
+			"/**/v3/api-docs",
 			"/**/v3/api-docs/**",            // OpenAPI文档接口
+			"/**/swagger-resources",
 			"/**/swagger-resources/**",      // Swagger资源配置
 			"/**/swagger-ui/**",             // Swagger UI界面资源
-			"/**/swagger-ui.html",           // Swagger UI页面
-			"/**/swagger-config"             // Swagger配置接口
+			"/**/swagger-ui.html"           // Swagger UI页面
 	);
 
 	@Override
