@@ -2,16 +2,12 @@ version: '3.8'
 
 services:
   nacos:
-    image: crpi-1iszvp3shb05ntyf.cn-hangzhou.personal.cr.aliyuncs.com/city_xing/nacos-server:v3.2.0
+    image: crpi-1iszvp3shb05ntyf.cn-hangzhou.personal.cr.aliyuncs.com/city_xing/nacos-server:v2.4.0
     container_name: nacos
     restart: always
     environment:
       - MODE=standalone
       - PREFER_HOST_MODE=hostname
-      - NACOS_AUTH_ENABLE=false
-      - NACOS_AUTH_TOKEN=placeholder
-      - NACOS_AUTH_IDENTITY_KEY=placeholder
-      - NACOS_AUTH_IDENTITY_VALUE=placeholder
     ports:
       - "8848:8848"
       - "9848:9848"
