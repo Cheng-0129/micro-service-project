@@ -191,7 +191,7 @@ jobs:
       - name: 环境预检查
         run: |
           # 检查 SSH key
-          if [ ! -f ~/.ssh/id_rsa ]; then
+          if [ ! -f ~/.ssh/id_ed25519 ] && [ ! -f ~/.ssh/id_rsa ]; then
             echo "❌ 未找到 SSH 私钥，请先配置 SSH key 并添加到 GitHub"
             echo "   参考: https://docs.github.com/en/authentication/connecting-to-github-with-ssh"
             exit 1
