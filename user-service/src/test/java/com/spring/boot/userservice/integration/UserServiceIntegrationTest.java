@@ -1,6 +1,7 @@
 package com.spring.boot.userservice.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.spring.boot.userservice.UserServiceApplication;
 import com.spring.boot.userservice.dto.LoginDTO;
 import com.spring.boot.userservice.dto.UserCreateDTO;
 import org.junit.jupiter.api.DisplayName;
@@ -23,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * @author Chi Shoucheng
  * @datetime 2026/6/8 11:06
  */
-@SpringBootTest
+@SpringBootTest(classes = {UserServiceApplication.class})
 @AutoConfigureMockMvc
 @ActiveProfiles("integration")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
