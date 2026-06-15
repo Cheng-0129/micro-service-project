@@ -184,7 +184,7 @@ jobs:
 
   # ==================== 5. 部署（Self-hosted Runner） ====================
   deploy:
-    needs: [ docker-build, push-base-images, db-migration-check ]
+    needs: [ docker-build, db-migration-check ]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     runs-on: self-hosted
     steps:
