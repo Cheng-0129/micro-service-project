@@ -10,6 +10,8 @@ services:
       - PREFER_HOST_MODE=hostname
       - NACOS_AUTH_ENABLE=false
       - NACOS_AUTH_TOKEN=placeholder
+      - NACOS_AUTH_IDENTITY_KEY=placeholder
+      - NACOS_AUTH_IDENTITY_VALUE=placeholder
     ports:
       - "8848:8848"
       - "9848:9848"
