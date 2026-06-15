@@ -242,7 +242,7 @@ jobs:
 
           echo "=== 等待 Nacos 就绪 ==="
           for i in $(seq 1 30); do
-            if curl -s http://localhost:8848/nacos/v1/console/health/readiness | grep -q "ok"; then
+            if curl -s http://localhost:8848/nacos/v1/console/health/readiness | grep -qi "ok"; then
               echo "✅ Nacos 就绪"
               break
             fi
@@ -274,15 +274,15 @@ jobs:
             RETRY_COUNT=0
           
             while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-              HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:${PORT}/actuator/health || echo "000")
-          
-              if [ "$HTTP_CODE" = "200" ]; then
-                echo "✅ $SERVICE 启动成功 (HTTP $HTTP_CODE)"
+              HEALTH=$(curl -s http://localhost:${PORT}/actuator/health || echo "{}")
+
+              if echo "$HEALTH" | grep -q '"status":"UP"'; then
+                echo "✅ $SERVICE 启动成功"
                 break
               fi
-          
+
               RETRY_COUNT=$((RETRY_COUNT + 1))
-              echo "  等待中... ($RETRY_COUNT/$MAX_RETRIES) HTTP: $HTTP_CODE"
+              echo "  等待中... ($RETRY_COUNT/$MAX_RETRIES)"
               sleep 5
             done
           
