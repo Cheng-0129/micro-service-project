@@ -13,6 +13,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -31,11 +33,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("OrderService 集成测试")
 public class OrderServiceIntegrationTest {
 
-	@Autowired
 	private MockMvc mockMvc;
 
 	@Autowired
+	private WebApplicationContext context;
+
+	@Autowired
 	private ObjectMapper objectMapper;
+
+	@BeforeEach
+	void setUp() {
+		mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
+	}
 
 	private static final Long TEST_USER_ID = 9999L;
 	private static final Long TEST_PRODUCT_ID = 9999L;
