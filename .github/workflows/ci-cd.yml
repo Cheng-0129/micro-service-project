@@ -239,7 +239,16 @@ jobs:
           
           echo "=== 重启基础设施 ==="
           docker compose up -d nacos redis postgres
-          sleep 15
+  
+          echo "=== 等待 Nacos 就绪 ==="
+          for i in $(seq 1 30); do
+          if curl -s http://localhost:8848/nacos/v1/console/health/readiness | grep -q "ok"; then
+          echo "✅ Nacos 就绪"
+          break
+          fi
+          echo "  等待 Nacos... ($i/30)"
+          sleep 5
+          done
           
           echo "=== 初始化数据库 ==="
           docker exec -i postgres psql -U postgres -d micro_service_project < /opt/micro-service-project/sql/init.sql 2>/dev/null || echo "数据库初始化完成"
