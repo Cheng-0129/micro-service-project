@@ -9,6 +9,7 @@ services:
       - MODE=standalone
       - PREFER_HOST_MODE=hostname
       - NACOS_AUTH_ENABLE=false
+      - NACOS_AUTH_TOKEN=placeholder
     ports:
       - "8848:8848"
       - "9848:9848"
