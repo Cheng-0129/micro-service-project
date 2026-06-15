@@ -188,6 +188,31 @@ jobs:
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     runs-on: self-hosted
     steps:
+      - name: 环境预检查
+        run: |
+          # 检查 SSH key
+          if [ ! -f ~/.ssh/id_rsa ]; then
+            echo "❌ 未找到 SSH 私钥，请先配置 SSH key 并添加到 GitHub"
+            echo "   参考: https://docs.github.com/en/authentication/connecting-to-github-with-ssh"
+            exit 1
+          fi
+
+          # 创建必要目录
+          mkdir -p /opt/micro-service-project/config/user-service
+          mkdir -p /opt/micro-service-project/config/stock-service
+          mkdir -p /opt/micro-service-project/config/order-service
+          mkdir -p /opt/micro-service-project/config/gateway
+          mkdir -p /opt/micro-service-project/sql
+          mkdir -p /opt/micro-service-project/seata/logs
+          mkdir -p /opt/micro-service-project/nacos/logs
+          mkdir -p /opt/micro-service-project/nacos/data
+          mkdir -p /opt/micro-service-project/logs/user-service
+          mkdir -p /opt/micro-service-project/logs/stock-service
+          mkdir -p /opt/micro-service-project/logs/order-service
+          mkdir -p /opt/micro-service-project/logs/gateway
+
+          echo "✅ 环境预检查完成"
+
       - name: 拉取代码
         run: |
           cd /home/ubuntu
@@ -215,6 +240,9 @@ jobs:
           echo "=== 重启基础设施 ==="
           docker compose up -d nacos redis postgres
           sleep 15
+          
+          echo "=== 初始化数据库 ==="
+          docker exec -i postgres psql -U postgres -d micro_service_project < /opt/micro-service-project/sql/init.sql 2>/dev/null || echo "数据库初始化完成"
           
           echo "=== 按顺序部署业务服务 ==="
           

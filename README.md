@@ -680,10 +680,10 @@ jwt:
 **A**: 首次部署或重建环境时，以下操作需要在虚拟机上手动执行一次：
 
 #### 1. 数据库建表
-PostgreSQL 容器首次启动后，需要手动执行初始化 SQL 建表：
+CI/CD 部署时会自动执行 `init.sql` 初始化数据库（幂等，可重复执行）。如需手动执行：
 
 ```bash
-docker exec -i postgres psql -U postgres -d micro_service_project < /opt/micro-service-project/sql/init.sql
+docker exec -i postgres psql -U postgres -d micro_service-project < /opt/micro-service-project/sql/init.sql
 ```
 
 #### 2. Seata 配置文件
@@ -717,12 +717,20 @@ docker-compose restart seata-server
 - 按页面指引在虚拟机上完成注册
 - 注册后 Runner 会作为系统服务自动启动，虚拟机重启后也会自动运行
 
-#### 4. 阿里云镜像仓库登录
-首次部署时需确保虚拟机能拉取阿里云容器镜像仓库的镜像：
+#### 4. SSH Key 配置
+CI/CD 通过 SSH 克隆仓库，首次部署前需要在虚拟机上配置 SSH key：
+- 生成密钥：`ssh-keygen -t rsa -b 4096 -C "your_email@example.com"`
+- 将公钥（~/.ssh/id_rsa.pub）添加到 GitHub 账号的 Settings > SSH and GPG keys
+- CI/CD 部署前会自动检查 SSH key，未配置会明确报错并终止
 
-```bash
-docker login --username=<你的阿里云账号> crpi-1iszvp3shb05ntyf.cn-hangzhou.personal.cr.aliyuncs.com
-```
+#### 5. 部署目录说明
+以下目录由 CI/CD 部署脚本自动创建，无需手动创建：
+- `/opt/micro-service-project/config/` — 各服务配置文件
+- `/opt/micro-service-project/logs/` — 各服务日志目录
+- `/opt/micro-service-project/sql/` — 数据库初始化脚本
+- `/opt/micro-service-project/seata/logs/` — Seata 日志
+- `/opt/micro-service-project/nacos/logs/` — Nacos 日志
+- `/opt/micro-service-project/nacos/data/` — Nacos 数据
 
 ### Q9: 生产环境访问 doc.html 提示"文档请求异常"或"Knife4j 文档请求异常"？
 **A**: 生产环境默认关闭了 API 文档。
