@@ -1,6 +1,7 @@
 package com.spring.boot.stockservice.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.spring.boot.stockservice.StockServiceApplication;
 import com.spring.boot.stockservice.dto.StockCreateDTO;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * @author Chi Shoucheng
  * @datetime 2026/6/8 11:12
  */
-@SpringBootTest
+@SpringBootTest(classes = {StockServiceApplication.class})
 @AutoConfigureMockMvc
 @ActiveProfiles("integration")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)

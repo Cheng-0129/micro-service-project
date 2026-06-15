@@ -1,6 +1,7 @@
 package com.spring.boot.orderservice.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.spring.boot.orderservice.OrderServiceApplication;
 import com.spring.boot.orderservice.dto.OrderCreateDTO;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * @author Chi Shoucheng
  * @datetime 2026/6/8 11:13
  */
-@SpringBootTest
+@SpringBootTest(classes = {OrderServiceApplication.class})
 @AutoConfigureMockMvc
 @ActiveProfiles("integration")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
