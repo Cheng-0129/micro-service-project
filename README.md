@@ -53,7 +53,7 @@
 | **数据库**     | PostgreSQL                | 15+         |
 | **服务治理**    | Nacos                     | 3.2.0       |
 | **接口文档**    | Knife4j                   | 4.5.0       |
-| **缓存**      | Redis                     | 5.0.14.1    |
+| **缓存**      | Redis                     | 7-alpine    |
 | **流量控制**    | Sentinel                  | 1.8.8       |
 | **分布式事务**   | Seata                     | 2.0.0       |
 | **消息队列**    | RocketMQ                  | 5.3.1       |
@@ -82,6 +82,7 @@
 - [服务间调用关系](#-服务间调用关系)
 - [流量控制与熔断降级](#-流量控制与熔断降级)
 - [监控与运维](#-监控与运维)
+- [测试策略](#-测试策略)
 - [API文档](#-api-文档)
 - [错误码规范](#-错误码规范)
 - [常见问题](#-常见问题)
@@ -361,7 +362,7 @@ micro-service-project/
 
 - **认证接口**：`/user-service/user/login`、`/user-service/user/register`
 - **Token 管理**：`/user-service/user/logout`、`/user-service/user/refresh`
-- **接口文档**：`/doc.html`、`/webjars/**`、`/**/v3/api-docs/**`、`/**/swagger-resources/**`、`/**/swagger-ui/**`、`/**/swagger-ui.html`、`/favicon.ico`
+- **接口文档**：`/doc.html`、`/webjars/**`、`/**/v3/api-docs`、`/**/v3/api-docs/**`、`/**/swagger-resources`、`/**/swagger-resources/**`、`/**/swagger-ui/**`、`/**/swagger-ui.html`、`/favicon.ico`
 
 ## 🔐 安全机制详解
 
@@ -584,6 +585,20 @@ graph TB
 - **网关健康检查**：`http://localhost:8088/actuator/health`
 - **业务服务健康检查**：`http://localhost:{port}/actuator/health`
 
+## 🧪 测试策略
+
+项目采用分层测试策略，单元测试与集成测试分离：
+
+| 阶段 | 触发时机 | 测试类型 | 插件 | 说明 |
+|------|---------|---------|------|------|
+| `build-and-test` | PR / push 任意分支 | 单元测试 | maven-surefire | 排除 `*IntegrationTest.java` |
+| `integration-test` | 合并 main 后 | 集成测试 | maven-failsafe | 只跑 `*IntegrationTest.java` |
+| `api-test` | 合并 main 后 | 接口冒烟测试 | Postman/Newman | 7 个核心业务接口 |
+
+- **单元测试**：Mock 依赖，验证业务逻辑，共 60 个
+- **集成测试**：启动 Spring 容器 + MockMvc，验证真实接口链路，共 13 个
+- **API 测试**：端到端验证，覆盖注册 → 登录 → 新增库存 → 创建订单 → 查询订单 → 取消订单 → 查询库存
+
 ## 📝 API 文档
 
 启动完成后，通过网关统一入口访问接口文档：
@@ -695,19 +710,45 @@ docker exec -i postgres psql -U postgres -d micro_service-project < /opt/micro-s
 确保 `/opt/micro-service-project/seata/application.yml` 配置正确，关键配置如下：
 
 ```yaml
+server:
+  port: 7091
+
+spring:
+  application:
+    name: seata-server
+
+logging:
+  file:
+    path: /root/logs/seata
+
+console:
+  user:
+    username: seata
+    password: seata
+
 seata:
   config:
     type: nacos
     nacos:
       server-addr: nacos:8848
+      namespace:
       group: DEFAULT_GROUP
   registry:
     type: nacos
     nacos:
       application: seata-server
       server-addr: nacos:8848
+      namespace:
       group: DEFAULT_GROUP
+  server:
+    service-port: 8091
+  security:
+    secretKey: seata-secret-key-2026
+    tokenValidityInMilliseconds: 1800000
+    ignore:
+      urls: /,/**/*.css,/**/*.js,/**/*.html,/**/*.ico
 ```
+
 > 💡 **注意**：Nacos 未开启认证时，不要配置 username 和 password，否则 Seata 启动会失败。
 
 重建后重启 Seata：
@@ -756,7 +797,7 @@ CI/CD 通过 SSH 克隆仓库，首次部署前需要在虚拟机上配置 SSH k
 - [x] 补充常见问题 FAQ
 - [x] 补充数据库建表脚本
 - [x] 补充部署说明（Docker / Docker Compose）
-- [ ] 补充单元测试与集成测试
+- [x] 补充单元测试与集成测试
 - [x] 补充 CI/CD 流水线配置
 - [ ] 补充性能测试报告
 
