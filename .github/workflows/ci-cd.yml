@@ -253,47 +253,61 @@ jobs:
           echo "=== 初始化数据库 ==="
           docker exec -i postgres psql -U postgres -d micro_service_project < /opt/micro-service-project/sql/init.sql 2>/dev/null || echo "数据库初始化完成"
           
-          echo "=== 按顺序部署业务服务 ==="
-          
-          SERVICES=("user-service" "stock-service" "order-service" "gateway")
-          PORTS=(8081 8082 8083 8088)
-          
-          for i in "${!SERVICES[@]}"; do
-            SERVICE=${SERVICES[$i]}
-            PORT=${PORTS[$i]}
-          
-            echo ""
-            echo ">>> 部署 $SERVICE (端口: $PORT)"
-          
-            # 关键修复：先拉新镜像，再强制重建
+          echo "=== 并行部署业务服务（gateway 除外）==="
+
+          # 先并行拉取并启动三个业务服务
+          for SERVICE in user-service stock-service order-service; do
             docker compose pull $SERVICE
             docker compose up -d --force-recreate $SERVICE
-          
-            echo "等待 $SERVICE 启动..."
-            MAX_RETRIES=30
-            RETRY_COUNT=0
-          
-            while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-              HEALTH=$(curl -s http://localhost:${PORT}/actuator/health || echo "{}")
-
-              if echo "$HEALTH" | grep -q '"status":"UP"'; then
-                echo "✅ $SERVICE 启动成功"
-                break
-              fi
-
-              RETRY_COUNT=$((RETRY_COUNT + 1))
-              echo "  等待中... ($RETRY_COUNT/$MAX_RETRIES)"
-              sleep 5
-            done
-          
-            if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
-              echo "❌ $SERVICE 启动超时"
-              docker compose logs --tail=50 $SERVICE
-              exit 1
-            fi
-          
-            sleep 10
           done
+  
+          # 并行等待三个业务服务健康检查通过
+          echo "等待业务服务启动..."
+          for PORT in 8081 8082 8083; do
+            (
+              MAX_RETRIES=30
+              RETRY_COUNT=0
+              while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+                HEALTH=$(curl -s http://localhost:${PORT}/actuator/health || echo "{}")
+                if echo "$HEALTH" | grep -q '"status":"UP"'; then
+                  echo "✅ 端口 ${PORT} 启动成功"
+                  break
+                fi
+                RETRY_COUNT=$((RETRY_COUNT + 1))
+                sleep 5
+              done
+              if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+                echo "❌ 端口 ${PORT} 启动超时"
+                exit 1
+              fi
+            ) &
+          done
+          wait
+  
+          echo ""
+          echo ">>> 部署 gateway (端口: 8088)"
+          docker compose pull gateway
+          docker compose up -d --force-recreate gateway
+  
+          echo "等待 gateway 启动..."
+          MAX_RETRIES=30
+          RETRY_COUNT=0
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            HEALTH=$(curl -s http://localhost:8088/actuator/health || echo "{}")
+            if echo "$HEALTH" | grep -q '"status":"UP"'; then
+              echo "✅ gateway 启动成功"
+              break
+            fi
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            echo "  等待中... ($RETRY_COUNT/$MAX_RETRIES)"
+            sleep 5
+          done
+  
+          if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+            echo "❌ gateway 启动超时"
+            docker compose logs --tail=50 gateway
+            exit 1
+          fi
           
           echo ""
           echo "=== 所有服务部署完成 ==="
