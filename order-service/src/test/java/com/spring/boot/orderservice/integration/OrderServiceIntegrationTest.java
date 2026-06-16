@@ -10,6 +10,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.context.web.AnnotationConfigWebContextLoader;
+import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
@@ -24,7 +26,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * @datetime 2026/6/8 11:13
  */
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = OrderServiceApplication.class)
+@WebAppConfiguration
+@ContextConfiguration(classes = OrderServiceApplication.class, loader = AnnotationConfigWebContextLoader.class)
 @ActiveProfiles("integration")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("OrderService 集成测试")
