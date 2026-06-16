@@ -42,8 +42,7 @@ public class UserServiceIntegrationTest {
 	@Autowired
 	private WebApplicationContext context;
 
-	@Autowired
-	private ObjectMapper objectMapper;
+	private final ObjectMapper objectMapper = new ObjectMapper();
 
 	@BeforeEach
 	void setUp() {
