@@ -259,12 +259,9 @@
                     <plugin>
                         <groupId>org.springframework.boot</groupId>
                         <artifactId>spring-boot-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>repackage</id>
-                                <phase>none</phase>
-                            </execution>
-                        </executions>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
                     </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
