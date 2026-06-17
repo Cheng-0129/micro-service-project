@@ -1,26 +1,8 @@
 spring:
-  datasource:
-    url: jdbc:postgresql://127.0.0.1:5432/micro_service_project
-    username: postgres
-    password: root
-    hikari:
-      initialization-fail-timeout: 30000
-      connection-timeout: 10000
-  data:
-    redis:
-      host: 127.0.0.1
-      port: 6379
   cloud:
     nacos:
-      discovery:
-        server-addr: 127.0.0.1:8848
       config:
         enabled: false
-        import-check:
-          enabled: false
-  autoconfigure:
-    exclude:
-      - com.alibaba.cloud.nacos.NacosConfigAutoConfiguration
 
 seata:
   registry:
@@ -36,12 +18,3 @@ seata:
 
 rocketmq:
   name-server: 127.0.0.1:9876
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
-  endpoint:
-    health:
-      show-details: always
