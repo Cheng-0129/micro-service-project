@@ -83,6 +83,7 @@
 - [流量控制与熔断降级](#-流量控制与熔断降级)
 - [监控与运维](#-监控与运维)
 - [测试策略](#-测试策略)
+- [CI/CD 流水线](#-cicd-流水线)
 - [API文档](#-api-文档)
 - [错误码规范](#-错误码规范)
 - [常见问题](#-常见问题)
@@ -96,17 +97,22 @@
 - **Maven**：3.6+（推荐 3.8.x 或 3.9.x）
 - **数据库**：PostgreSQL 15+
 - **中间件**：
-  - Nacos 3.2.0（注册中心 + 配置中心）
-  - Redis 5.0.14.1+（缓存）
+  - Nacos 2.4.0+（注册中心 + 配置中心，本地开发可用 3.x）
+  - Redis 7.x（缓存）
   - Seata 2.0.0（分布式事务）
   - RocketMQ 5.3.1+（消息队列，可选）
   - Sentinel Dashboard 1.8.8+（流量监控，可选）
+- **容器化部署**（可选）：
+  - Docker 20.10+
+  - Docker Compose 2.0+
 
 > ⚠️ **版本兼容性说明**：
 > - Spring Boot 3.x 需要 JDK 17+，不支持 JDK 8/11
 > - Spring Cloud 2023.x 对应 Spring Boot 3.2.x，两者版本强绑定
 > - Seata 2.0.0 才支持 Spring Boot 3.x，1.x 版本不兼容
 > - Nacos 客户端 3.2.0 需要 Nacos Server 2.3.0+
+> - **Nacos 版本建议**：CI/CD 和 Docker Compose 部署使用 v2.4.0（启动快、体积小），本地开发可使用 3.x
+
 
 ### 2️⃣ 克隆项目
 
@@ -117,9 +123,11 @@ cd micro-service-project
 
 ### 3️⃣ 配置环境
 
+#### 方式一：本地开发配置
+
 各服务配置文件按环境拆分（`application.yml` / `application-dev.yml` / `application-test.yml` / `application-prod.yml` / `bootstrap.yml`），修改对应环境的配置即可。
 
-#### 关键配置项
+##### 关键配置项
 
 | 配置项          | 位置                                                | 说明                                            |
 |--------------|---------------------------------------------------|-----------------------------------------------|
@@ -131,7 +139,7 @@ cd micro-service-project
 | **Sentinel** | 各服务 `application-*.yml`                           | Dashboard 地址、规则数据源（Nacos）                     |
 | **日志级别**     | 各服务 `application-*.yml`                           | dev: debug / test: info / prod: warn + 文件滚动存储 |
 
-#### 环境变量（可选）
+##### 环境变量（可选）
 
 项目提供了 `.env.example` 模板文件，复制为 `.env` 后可统一管理环境变量：
 
@@ -160,7 +168,32 @@ export ROCKETMQ_ADDR=localhost:9876
 
 # Sentinel Dashboard 地址
 export SENTINEL_DASHBOARD=127.0.0.1:8089
+
+# JWT 密钥（生产环境必须设置）
+export JWT_SECRET=your-secret-key-at-least-32-characters
 ```
+
+#### 方式二：Docker Compose 一键部署
+
+项目提供完整的 Docker Compose 配置，可一键启动所有中间件和业务服务：
+
+```bash
+# 1. 准备环境变量
+cp .env.example .env
+
+# 编辑 .env 文件，设置数据库密码和 JWT 密钥
+
+# 2. 启动所有服务（首次启动会自动拉取镜像）
+docker-compose up -d
+
+# 3. 查看服务状态
+docker-compose ps
+
+# 4. 查看日志
+docker-compose logs -f gateway
+```
+
+> 💡 **提示**：Docker Compose 部署需要先构建并推送 Docker 镜像到私有仓库，详见 [CI/CD 章节](#-cicd-流水线)。
 
 ### 4️⃣ 初始化数据库
 
@@ -172,6 +205,8 @@ psql -U your_username -c "CREATE DATABASE micro_service_project;"
 psql -U your_username -d micro_service_project -f sql/init.sql
 ```
 
+> 💡 **Docker Compose 用户**：数据库会在首次启动时自动初始化，无需手动执行。
+
 ### 5️⃣ 编译项目
 
 ```bash
@@ -182,15 +217,16 @@ mvn clean install -DskipTests
 
 **按顺序启动以下中间件**，确保各服务能正常注册与通信：
 
-| 中间件                    | 版本        | 启动方式                                                                              | 访问地址                          | 默认账号/密码             |
-|------------------------|-----------|-----------------------------------------------------------------------------------|-------------------------------|---------------------|
-| **Nacos**              | 3.2.0     | `startup.cmd -m standalone`（Windows）<br/>`sh startup.sh -m standalone`（Linux/Mac） | `http://localhost:8848/nacos` | nacos / nacos       |
-| **Redis**              | 5.0.14.1+ | Windows: 双击 `redis-server.exe`<br/>Linux/Mac: `redis-server`                      | -                             | -                   |
-| **Seata**              | 2.0.0     | `seata-server.bat`（Windows）<br/>`sh seata-server.sh`（Linux/Mac）                   | -                             | -                   |
-| **RocketMQ**           | 5.3.1+    | 参考 [RocketMQ 官方文档](https://rocketmq.apache.org/docs/quick-start/)                 | -                             | -                   |
-| **Sentinel Dashboard** | 1.8.8+    | `java -jar sentinel-dashboard-1.8.8.jar`                                          | `http://localhost:8089`       | sentinel / sentinel |
+| 中间件                    | 版本     | 启动方式                                                                              | 访问地址                          | 默认账号/密码             |
+|------------------------|--------|-----------------------------------------------------------------------------------|-------------------------------|---------------------|
+| **Nacos**              | 2.4.0+ | `startup.cmd -m standalone`（Windows）<br/>`sh startup.sh -m standalone`（Linux/Mac） | `http://localhost:8848/nacos` | nacos / nacos       |
+| **Redis**              | 7.x    | Windows: 双击 `redis-server.exe`<br/>Linux/Mac: `redis-server`                      | -                             | -                   |
+| **Seata**              | 2.0.0  | `seata-server.bat`（Windows）<br/>`sh seata-server.sh`（Linux/Mac）                   | `http://localhost:7091`       | seata / seata       |
+| **RocketMQ**           | 5.3.1+ | 参考 [RocketMQ 官方文档](https://rocketmq.apache.org/docs/quick-start/)                 | -                             | -                   |
+| **Sentinel Dashboard** | 1.8.8+ | `java -jar sentinel-dashboard-1.8.8.jar`                                          | `http://localhost:8089`       | sentinel / sentinel |
 
 > 💡 **提示**：RocketMQ 和 Sentinel Dashboard 为可选组件，不影响基础功能运行。
+> 💡 **Docker Compose 用户**：使用 `docker-compose up -d nacos redis postgres seata-server rocketmq-namesrv rocketmq-broker sentinel-dashboard` 一键启动所有中间件。
 
 ### 7️⃣ 启动服务
 
@@ -219,7 +255,12 @@ mvn spring-boot:run -pl gateway
 1. **查看 Nacos 控制台**：`http://localhost:8848/nacos` → 服务管理 → 服务列表，确认 4 个服务均已注册
 2. **访问接口文档**：`http://localhost:8088/doc.html`
 3. **查看 Sentinel 控制台**（如已启动）：`http://localhost:8089`
-4. **测试登录注册接口**：
+4. **健康检查**：
+  - 网关：`http://localhost:8088/actuator/health`
+  - 用户服务：`http://localhost:8081/actuator/health`
+  - 库存服务：`http://localhost:8082/actuator/health`
+  - 订单服务：`http://localhost:8083/actuator/health`
+5. **测试登录注册接口**：
 
 ```bash
 # 注册用户
@@ -233,7 +274,7 @@ curl -X POST http://localhost:8088/user-service/user/login \
   -d '{"username":"test","password":"123456"}'
 ```
 
-5. **完整业务流程测试**：
+6. **完整业务流程测试**：
 
 ```bash
 # ① 登录获取 Token
@@ -538,12 +579,12 @@ graph TB
 
 各子服务通过 `@SentinelResource` 接入熔断降级：
 
-| 服务 | 资源名 | fallback | blockHandler | 说明 |
-|------|--------|----------|-------------|------|
-| user-service | `userCreateOrder` | `UserBlockHandler.handleFallback` | `UserBlockHandler.handleBlock` | 用户下单接口 |
-| order-service | `createOrder` | `OrderBlockHandler.handleCreateOrderFallback` | `OrderBlockHandler.handleCreateOrderBlock` | 创建订单接口 |
-| order-service | `cancelOrder` | `OrderBlockHandler.handleCancelOrderFallback` | `OrderBlockHandler.handleCancelOrderBlock` | 取消订单接口 |
-| stock-service | `deductStock` | `StockBlockHandler.handleFallback` | `StockBlockHandler.handleBlock` | 扣减库存接口 |
+| 服务            | 资源名               | fallback                                      | blockHandler                               | 说明     |
+|---------------|-------------------|-----------------------------------------------|--------------------------------------------|--------|
+| user-service  | `userCreateOrder` | `UserBlockHandler.handleFallback`             | `UserBlockHandler.handleBlock`             | 用户下单接口 |
+| order-service | `createOrder`     | `OrderBlockHandler.handleCreateOrderFallback` | `OrderBlockHandler.handleCreateOrderBlock` | 创建订单接口 |
+| order-service | `cancelOrder`     | `OrderBlockHandler.handleCancelOrderFallback` | `OrderBlockHandler.handleCancelOrderBlock` | 取消订单接口 |
+| stock-service | `deductStock`     | `StockBlockHandler.handleFallback`            | `StockBlockHandler.handleBlock`            | 扣减库存接口 |
 
 #### 降级策略
 
@@ -568,6 +609,48 @@ graph TB
 
 ## 📊 监控与运维
 
+### Actuator 健康检查
+
+所有服务均集成了 Spring Boot Actuator，提供健康检查和指标监控：
+
+- **端点暴露**：`health`, `info`
+- **健康详情**：始终显示详细信息（`show-details: always`）
+- **访问地址**：
+  - 网关：`http://localhost:8088/actuator/health`
+  - 用户服务：`http://localhost:8081/actuator/health`
+  - 库存服务：`http://localhost:8082/actuator/health`
+  - 订单服务：`http://localhost:8083/actuator/health`
+
+#### 健康检查响应示例
+
+```json
+{
+  "status": "UP",
+  "components": {
+    "db": {
+      "status": "UP",
+      "details": {
+        "database": "PostgreSQL",
+        "validationQuery": "isValid()"
+      }
+    },
+    "redis": {
+      "status": "UP",
+      "details": {
+        "version": "7.0.0"
+      }
+    },
+    "discoveryComposite": {
+      "status": "UP",
+      "description": "Discovery Client not initialized"
+    },
+    "ping": {
+      "status": "UP"
+    }
+  }
+}
+```
+
 ### Sentinel 监控
 
 - **Dashboard 地址**：`http://localhost:8089`
@@ -579,25 +662,122 @@ graph TB
 - **开发环境**（dev）：日志级别 `DEBUG`，输出到控制台
 - **测试环境**（test）：日志级别 `INFO`，输出到控制台
 - **生产环境**（prod）：日志级别 `WARN`，输出到控制台 + 文件滚动存储
-
-### 健康检查
-
-- **网关健康检查**：`http://localhost:8088/actuator/health`
-- **业务服务健康检查**：`http://localhost:{port}/actuator/health`
+  - 日志文件路径：`/app/logs/app.log`
+  - 单文件大小限制：100MB
+  - 保留天数：7 天
 
 ## 🧪 测试策略
 
 项目采用分层测试策略，单元测试与集成测试分离：
 
-| 阶段 | 触发时机 | 测试类型 | 插件 | 说明 |
-|------|---------|---------|------|------|
-| `build-and-test` | PR / push 任意分支 | 单元测试 | maven-surefire | 排除 `*IntegrationTest.java` |
-| `integration-test` | 合并 main 后 | 集成测试 | maven-failsafe | 只跑 `*IntegrationTest.java` |
-| `api-test` | 合并 main 后 | 接口冒烟测试 | Postman/Newman | 7 个核心业务接口 |
+| 阶段                 | 触发时机           | 测试类型   | 插件             | 说明                         |
+|--------------------|----------------|--------|----------------|----------------------------|
+| `build-and-test`   | PR / push 任意分支 | 单元测试   | maven-surefire | 排除 `*IntegrationTest.java` |
+| `integration-test` | 合并 main 后      | 集成测试   | maven-failsafe | 只跑 `*IntegrationTest.java` |
+| `api-test`         | 合并 main 后      | 接口冒烟测试 | Postman/Newman | 7 个核心业务接口                  |
 
-- **单元测试**：Mock 依赖，验证业务逻辑，共 60 个
-- **集成测试**：启动 Spring 容器 + MockMvc，验证真实接口链路，共 13 个
+- **单元测试**：Mock 依赖，验证业务逻辑，覆盖 Service 层核心方法
+- **集成测试**：启动 Spring 容器 + MockMvc，验证真实接口链路
 - **API 测试**：端到端验证，覆盖注册 → 登录 → 新增库存 → 创建订单 → 查询订单 → 取消订单 → 查询库存
+
+### 运行测试
+
+```bash
+# 运行所有单元测试
+mvn test
+
+# 运行集成测试
+mvn verify -P integration-test
+
+# 运行 API 测试（需先启动服务）
+newman run postman-collection.json
+```
+
+## 🚀 CI/CD 流水线
+
+项目配置了完整的 GitHub Actions CI/CD 流水线，实现自动化构建、测试、部署：
+
+### 流水线流程
+
+```mermaid
+graph LR
+    A[代码提交] --> B[编译 & 单元测试]
+    B --> C[Docker 镜像构建]
+    C --> D[数据库迁移检查]
+    D --> E[部署到服务器]
+    E --> F[集成测试]
+    F --> G[API 冒烟测试]
+    G --> H[部署完成]
+```
+
+### 触发条件
+
+- **push 到 main/master/develop 分支**：触发完整流水线
+- **pull request 到 main/master**：仅触发编译和单元测试
+- **手动触发**：支持手动推送基础镜像
+
+### 流水线步骤
+
+1. **编译与测试**（`build-and-test`）
+  - 拉取代码
+  - 设置 JDK 17
+  - Maven 全量编译
+  - 运行单元测试
+  - 上传 JAR 包制品
+
+2. **Docker 镜像构建**（`docker-build`）
+  - 并行构建 4 个服务的 Docker 镜像
+  - 推送到阿里云私有镜像仓库
+  - 标签格式：`{SHA8}` + `latest`
+
+3. **基础镜像推送**（`push-base-images`，手动触发）
+  - 推送 Java、Nacos、Redis、Seata、Sentinel、RocketMQ 镜像到阿里云
+
+4. **数据库迁移检查**（`db-migration-check`）
+  - 检测 SQL 脚本变更
+  - 提醒在测试环境执行迁移
+
+5. **部署**（`deploy`，Self-hosted Runner）
+  - 环境预检查（SSH key、目录结构）
+  - 拉取最新代码
+  - 同步配置文件
+  - 重启基础设施（Nacos、Redis、PostgreSQL）
+  - 并行部署业务服务（user-service、stock-service、order-service）
+  - 等待健康检查通过
+  - 部署网关（最后启动）
+  - 清理旧镜像
+
+6. **集成测试**（`integration-test`）
+  - 在部署后的环境中运行集成测试
+
+7. **API 冒烟测试**（`api-test`）
+  - 使用 Newman 运行 Postman 集合
+  - 验证 7 个核心业务接口
+
+8. **失败通知**（`notify`）
+  - 企业微信 Webhook 通知
+
+### 配置 Secrets
+
+在 GitHub 仓库 Settings → Secrets and variables → Actions 中配置：
+
+| Secret 名称                | 说明               |
+|--------------------------|------------------|
+| `ALIYUN_DOCKER_USERNAME` | 阿里云容器镜像服务用户名     |
+| `ALIYUN_DOCKER_PASSWORD` | 阿里云容器镜像服务密码      |
+| `ALIYUN_NAMESPACE`       | 阿里云命名空间          |
+| `JWT_SECRET`             | JWT 密钥           |
+| `WECOM_WEBHOOK`          | 企业微信 Webhook URL |
+
+### Self-hosted Runner 配置
+
+部署阶段使用自托管 Runner，需要在目标服务器上配置：
+
+1. 在 GitHub 仓库 Settings → Actions → Runners 页面获取 Token
+2. 在服务器上执行注册命令
+3. Runner 会作为系统服务自动运行
+
+> 💡 **提示**：首次部署前需在服务器上配置 SSH Key 用于克隆代码。
 
 ## 📝 API 文档
 
@@ -696,10 +876,34 @@ jwt:
 ### Q7: 防重放攻击机制如何测试？
 **A**: 使用相同参数快速重复请求标注了 `@PreventReplay` 的接口，第二次请求会被拒绝。
 
-### Q8: 部署后服务启动异常，有哪些需要手动检查的？
+### Q8: Docker Compose 部署时镜像拉取失败？
+**A**:
+- 检查网络连接，确保能访问阿里云镜像仓库
+- 确认已在 GitHub Secrets 中配置正确的阿里云账号信息
+- 如需使用本地镜像，修改 `docker-compose.yml` 中的镜像地址
+- **临时方案**：可以先在本地构建镜像 `docker build -t your-image:tag .`
+
+### Q9: CI/CD 部署失败怎么办？
+**A**:
+- 查看 GitHub Actions 日志，定位失败步骤
+- 检查 Self-hosted Runner 是否在线
+- 确认服务器上 SSH Key 已配置
+- 检查阿里云镜像仓库凭证是否正确
+- 查看服务器磁盘空间是否充足
+- **常见错误**：JWT_SECRET 未设置或过短（至少 32 字符）
+
+### Q10: 生产环境访问 doc.html 提示"文档请求异常"或"Knife4j 文档请求异常"？
+**A**: 生产环境默认关闭了 API 文档。
+1. 检查 Nacos 中 `common-config.yaml` 是否配置了 `knife4j.production: true`
+2. 如需临时开启，将 `knife4j.production` 改为 `false`，同时添加 `springdoc.api-docs.enabled: true`
+3. 发布配置后**重启业务服务**（网关不需要重启）
+4. 使用完毕后建议改回 `production: true` 并重启服务，避免接口信息泄露
+
+### Q11: 部署后服务启动异常，有哪些需要手动检查的？
 **A**: 首次部署或重建环境时，以下操作需要在虚拟机上手动执行一次：
 
 #### 1. 数据库建表
+
 CI/CD 部署时会自动执行 `init.sql` 初始化数据库（幂等，可重复执行）。如需手动执行：
 
 ```bash
@@ -707,6 +911,7 @@ docker exec -i postgres psql -U postgres -d micro_service-project < /opt/micro-s
 ```
 
 #### 2. Seata 配置文件
+
 确保 `/opt/micro-service-project/seata/application.yml` 配置正确，关键配置如下：
 
 ```yaml
@@ -758,18 +963,21 @@ docker-compose restart seata-server
 ```
 
 #### 3. Self-hosted Runner 首次注册
+
 虚拟机上的 GitHub Actions Runner 首次使用需要手动注册：
 - 在 GitHub 仓库 Settings > Actions > Runners 页面获取 Token
 - 按页面指引在虚拟机上完成注册
 - 注册后 Runner 会作为系统服务自动启动，虚拟机重启后也会自动运行
 
 #### 4. SSH Key 配置
+
 CI/CD 通过 SSH 克隆仓库，首次部署前需要在虚拟机上配置 SSH key：
 - 生成密钥：`ssh-keygen -t rsa -b 4096 -C "your_email@example.com"`
 - 将公钥（~/.ssh/id_rsa.pub）添加到 GitHub 账号的 Settings > SSH and GPG keys
 - CI/CD 部署前会自动检查 SSH key，未配置会明确报错并终止
 
 #### 5. 部署目录说明
+
 以下目录由 CI/CD 部署脚本自动创建，无需手动创建：
 - `/opt/micro-service-project/config/` — 各服务配置文件
 - `/opt/micro-service-project/logs/` — 各服务日志目录
@@ -777,13 +985,6 @@ CI/CD 通过 SSH 克隆仓库，首次部署前需要在虚拟机上配置 SSH k
 - `/opt/micro-service-project/seata/logs/` — Seata 日志
 - `/opt/micro-service-project/nacos/logs/` — Nacos 日志
 - `/opt/micro-service-project/nacos/data/` — Nacos 数据
-
-### Q9: 生产环境访问 doc.html 提示"文档请求异常"或"Knife4j 文档请求异常"？
-**A**: 生产环境默认关闭了 API 文档。
-1. 检查 Nacos 中 `common-config.yaml` 是否配置了 `knife4j.production: true`
-2. 如需临时开启，将 `knife4j.production` 改为 `false`，同时添加 `springdoc.api-docs.enabled: true`
-3. 发布配置后**重启业务服务**（网关不需要重启）
-4. 使用完毕后建议改回 `production: true` 并重启服务，避免接口信息泄露
 
 ## ✅ 待办事项
 
@@ -798,8 +999,13 @@ CI/CD 通过 SSH 克隆仓库，首次部署前需要在虚拟机上配置 SSH k
 - [x] 补充数据库建表脚本
 - [x] 补充部署说明（Docker / Docker Compose）
 - [x] 补充单元测试与集成测试
-- [x] 补充 CI/CD 流水线配置
-- [ ] 补充性能测试报告
+- [x] 补充 CI/CD 流水线配置（GitHub Actions）
+- [x] 补充 Actuator 健康检查配置
+- [ ] 补充性能测试报告（JMeter/Gatling）
+- [ ] 接入 Prometheus + Grafana 监控体系
+- [ ] 接入分布式链路追踪（SkyWalking / Zipkin）
+- [ ] 添加 API 速率限制配置示例
+- [ ] 补充服务网格（Service Mesh）集成指南
 
 ## 📄 License
 
