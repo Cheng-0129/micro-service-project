@@ -754,9 +754,6 @@ graph LR
   - 使用 Newman 运行 Postman 集合
   - 验证 7 个核心业务接口
 
-8. **失败通知**（`notify`）
-  - 企业微信 Webhook 通知
-
 ### 配置 Secrets
 
 在 GitHub 仓库 Settings → Secrets and variables → Actions 中配置：
@@ -767,7 +764,6 @@ graph LR
 | `ALIYUN_DOCKER_PASSWORD` | 阿里云容器镜像服务密码      |
 | `ALIYUN_NAMESPACE`       | 阿里云命名空间          |
 | `JWT_SECRET`             | JWT 密钥           |
-| `WECOM_WEBHOOK`          | 企业微信 Webhook URL |
 
 ### Self-hosted Runner 配置
 
