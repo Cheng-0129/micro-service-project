@@ -9,12 +9,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.context.web.AnnotationConfigWebContextLoader;
-import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -25,13 +28,26 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * @author Chi Shoucheng
  * @datetime 2026/6/8 11:13
  */
+@Testcontainers
 @ExtendWith(SpringExtension.class)
-@WebAppConfiguration
-@ContextConfiguration(classes = OrderServiceApplication.class, loader = AnnotationConfigWebContextLoader.class)
+@ContextConfiguration(classes = OrderServiceApplication.class)
 @ActiveProfiles("integration")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("OrderService 集成测试")
 public class OrderServiceIntegrationTest {
+
+	@Container
+	static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
+			.withDatabaseName("micro_service_project")
+			.withUsername("postgres")
+			.withPassword("root");
+
+	@DynamicPropertySource
+	static void configureProperties(DynamicPropertyRegistry registry) {
+		registry.add("spring.datasource.url", postgres::getJdbcUrl);
+		registry.add("spring.datasource.username", postgres::getUsername);
+		registry.add("spring.datasource.password", postgres::getPassword);
+	}
 
 	private MockMvc mockMvc;
 
@@ -53,13 +69,11 @@ public class OrderServiceIntegrationTest {
 	@Order(1)
 	@DisplayName("创建订单 - 成功")
 	void createOrder_ShouldReturnSuccess() throws Exception {
-		// 先注册用户
 		String registerBody = "{\"name\":\"order_test_user\",\"password\":\"test123456\",\"age\":20,\"email\":\"order@test.com\"}";
 		mockMvc.perform(post("/user/register")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(registerBody));
 
-		// 创建订单
 		OrderCreateDTO dto = new OrderCreateDTO();
 		dto.setUserId(TEST_USER_ID);
 		dto.setProductId(TEST_PRODUCT_ID);

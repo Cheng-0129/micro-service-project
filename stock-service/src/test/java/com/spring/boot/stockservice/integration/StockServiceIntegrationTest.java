@@ -9,12 +9,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.context.web.AnnotationConfigWebContextLoader;
-import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.math.BigDecimal;
 
@@ -28,13 +31,26 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * @author Chi Shoucheng
  * @datetime 2026/6/8 11:12
  */
+@Testcontainers
 @ExtendWith(SpringExtension.class)
-@WebAppConfiguration
-@ContextConfiguration(classes = StockServiceApplication.class, loader = AnnotationConfigWebContextLoader.class)
+@ContextConfiguration(classes = StockServiceApplication.class)
 @ActiveProfiles("integration")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("StockService 集成测试")
 public class StockServiceIntegrationTest {
+
+	@Container
+	static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
+			.withDatabaseName("micro_service_project")
+			.withUsername("postgres")
+			.withPassword("root");
+
+	@DynamicPropertySource
+	static void configureProperties(DynamicPropertyRegistry registry) {
+		registry.add("spring.datasource.url", postgres::getJdbcUrl);
+		registry.add("spring.datasource.username", postgres::getUsername);
+		registry.add("spring.datasource.password", postgres::getPassword);
+	}
 
 	private MockMvc mockMvc;
 
@@ -68,7 +84,6 @@ public class StockServiceIntegrationTest {
 				.getResponse()
 				.getContentAsString();
 
-		// 查回来拿真实 productId
 		String listResult = mockMvc.perform(get("/stock/page")
 						.param("pageNum", "1")
 						.param("pageSize", "10"))
