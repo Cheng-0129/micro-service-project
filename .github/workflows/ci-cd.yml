@@ -341,7 +341,7 @@ jobs:
       - name: 运行集成测试
         run: |
           cd /home/ubuntu/repo
-          mvn clean install -DskipTests -pl user-service,stock-service,order-service -am -B
+          mvn clean install -DskipTests -P integration-test -pl user-service,stock-service,order-service -am -B
           mvn verify -P integration-test -pl user-service,stock-service,order-service -am -B
 
   # ==================== 7. API 冒烟测试 ====================
