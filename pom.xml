@@ -35,7 +35,7 @@
         <rocketmq-client.version>5.3.1</rocketmq-client.version>
         <jjwt.version>0.12.3</jjwt.version>
         <testcontainers.version>1.19.3</testcontainers.version>
-        <mockito.version>5.8.0</mockito.version>
+        <mockito.version>5.14.2</mockito.version>
         <assertj.version>3.24.2</assertj.version>
 
         <maven.compiler.source>17</maven.compiler.source>
@@ -278,6 +278,13 @@
                             <includes>
                                 <include>**/*IntegrationTest.java</include>
                             </includes>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <skip>true</skip>
                         </configuration>
                     </plugin>
                 </plugins>
