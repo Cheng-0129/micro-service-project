@@ -364,17 +364,3 @@ jobs:
           cd /home/ubuntu/repo
           export PATH="$HOME/.npm-global/bin:$PATH"
           newman run postman-collection.json --reporters cli
-
-  # ==================== 8. 失败通知 ====================
-  notify:
-    needs: [build-and-test, docker-build, deploy]
-    if: failure()
-    runs-on: ubuntu-latest
-    steps:
-      - name: 发送邮箱通知
-        run: |
-          TITLE="❌ CI/CD 失败 - 微服务项目"
-          
-          curl -X POST '${{ secrets.WECOM_WEBHOOK }}' \
-            -H 'Content-Type: application/json' \
-            -d "{\"msgtype\":\"markdown\",\"markdown\":{\"content\":\"## ${TITLE}\n> 分支: ${{ github.ref_name }}\n> 提交: ${{ github.event.head_commit.message }}\n> 提交者: ${{ github.actor }}\n> [查看详情](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\"}}"
