@@ -1,6 +1,5 @@
 package com.spring.boot.stockservice.unit;
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.spring.boot.commoncore.exception.BusinessException;
 import com.spring.boot.commoncore.vo.PageVO;

@@ -4,7 +4,6 @@ import com.alibaba.csp.sentinel.annotation.SentinelResource;
 import com.spring.boot.commoncore.constant.FeignHeaders;
 import com.spring.boot.commoncore.annotation.PreventReplay;
 import com.spring.boot.commoncore.result.Result;
-import com.spring.boot.commoncore.util.ExceptionUtil;
 import com.spring.boot.commoncore.vo.PageVO;
 import com.spring.boot.orderservice.dto.OrderCreateDTO;
 import com.spring.boot.orderservice.dto.OrderQueryDTO;

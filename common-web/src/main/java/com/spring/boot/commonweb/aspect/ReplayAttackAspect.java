@@ -3,7 +3,6 @@ package com.spring.boot.commonweb.aspect;
 import com.spring.boot.commoncore.annotation.PreventReplay;
 import com.spring.boot.commoncore.exception.BusinessException;
 import com.spring.boot.commoncore.result.ResultCode;
-import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
