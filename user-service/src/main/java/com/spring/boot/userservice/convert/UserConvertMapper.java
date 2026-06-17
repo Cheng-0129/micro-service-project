@@ -2,7 +2,6 @@ package com.spring.boot.userservice.convert;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.spring.boot.commoncore.vo.PageVO;
-import com.spring.boot.userservice.dto.UpdatePasswordDTO;
 import com.spring.boot.userservice.dto.UserCreateDTO;
 import com.spring.boot.userservice.dto.UserUpdateDTO;
 import com.spring.boot.userservice.entity.User;
